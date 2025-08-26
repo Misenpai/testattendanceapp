@@ -5,11 +5,12 @@ const API_BASE = process.env.EXPO_PUBLIC_API_BASE;
 
 export interface AuthResponse {
   success: boolean;
-  empCode?: string;  // Changed from userId
+  empCode?: string;
   username?: string;
+  token?: string;  // JWT token
   user?: {
-    userKey: string;  // New primary key
-    empCode: string;  // Changed from id
+    userKey: string;
+    empCode: string;
     username: string;
     email: string;
     location?: string;
@@ -32,14 +33,14 @@ const apiClient = axios.create({
 });
 
 export const signupUser = async (
-  empCode: string,  // Changed from empId
+  empCode: string,
   username: string, 
   email: string, 
   password: string
 ): Promise<AuthResponse> => {
   try {
     const { data } = await apiClient.post('/signup', {
-      empCode: empCode.trim(),  // Changed from empId
+      empCode: empCode.trim(),
       username: username.trim(),
       email: email.toLowerCase().trim(),
       password
@@ -51,6 +52,7 @@ export const signupUser = async (
       success: data.success,
       empCode: data.empCode,
       username: data.username,
+      token: data.token,
       user: data.user,
       message: data.message
     };
@@ -87,6 +89,7 @@ export const loginUser = async (
       success: data.success,
       empCode: data.empCode,
       username: data.username,
+      token: data.token,
       user: data.user,
       message: data.message
     };

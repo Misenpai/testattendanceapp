@@ -11,10 +11,23 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 import { MapShapeType } from "react-native-leaflet-view";
 
+// Add this interface for the attendance service
+interface AttendanceCoordinates {
+  latitude: number;
+  longitude: number;
+  location?: string | null;
+  timestamp: Date;
+}
+
+// Add this type for the callback
+type AttendanceUpdateCallback = (coordinates: AttendanceCoordinates) => void;
+
 export function useGeofence(
   selectedGeofenceId?: string | null,
   userLocationType?: "ABSOLUTE" | "APPROX" | "FIELDTRIP" | null,
   isFieldTrip?: boolean,
+  // Add optional callback for attendance updates
+  onLocationUpdate?: AttendanceUpdateCallback,
 ) {
   const [html, setHtml] = useState<string | null>(null);
   const [userPos, setUserPos] = useState<LatLng | null>(null);
@@ -73,8 +86,57 @@ export function useGeofence(
       }
       return null;
     },
-    [haversine, activeGeofenceLocations], // Add activeGeofenceLocations as dependency
+    [haversine, activeGeofenceLocations],
   );
+
+  // Add function to send coordinates to attendance service
+  const updateAttendanceLocation = useCallback(
+    (position: LatLng, detectedLocation: string | null) => {
+      if (onLocationUpdate) {
+        const coordinates: AttendanceCoordinates = {
+          latitude: position.lat,
+          longitude: position.lng,
+          location: detectedLocation,
+          timestamp: new Date(),
+        };
+        onLocationUpdate(coordinates);
+      }
+    },
+    [onLocationUpdate],
+  );
+
+  // Add method to manually capture current position for attendance
+  const captureLocationForAttendance = useCallback(async (): Promise<AttendanceCoordinates | null> => {
+    try {
+      const { coords } = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High, // Use high accuracy for attendance
+      });
+
+      const position: LatLng = {
+        lat: coords.latitude,
+        lng: coords.longitude,
+      };
+
+      const detectedLocation = checkGeofences(position);
+      
+      const coordinates: AttendanceCoordinates = {
+        latitude: position.lat,
+        longitude: position.lng,
+        location: detectedLocation,
+        timestamp: new Date(),
+      };
+
+      // Also call the callback if provided
+      if (onLocationUpdate) {
+        onLocationUpdate(coordinates);
+      }
+
+      return coordinates;
+    } catch (error) {
+      Alert.alert("Location Error", "Failed to capture location for attendance");
+      return null;
+    }
+  }, [checkGeofences, onLocationUpdate]);
 
   const mapShapes = useMemo(
     (): MapShape[] =>
@@ -239,8 +301,12 @@ export function useGeofence(
         if (isComponentMounted) {
           setUserPos(initialPosition);
           setInitialPos(initialPosition);
-          setCurrentLocation(checkGeofences(initialPosition));
+          const detectedLocation = checkGeofences(initialPosition);
+          setCurrentLocation(detectedLocation);
           setIsInitialized(true);
+          
+          // Send initial position to attendance service
+          updateAttendanceLocation(initialPosition, detectedLocation);
         }
 
         subscription = await Location.watchPositionAsync(
@@ -257,8 +323,12 @@ export function useGeofence(
               lng: coords.longitude,
             };
 
+            const detectedLocation = checkGeofences(newPos);
             setUserPos(newPos);
-            setCurrentLocation(checkGeofences(newPos));
+            setCurrentLocation(detectedLocation);
+            
+            // Send updated position to attendance service
+            updateAttendanceLocation(newPos, detectedLocation);
           },
         );
       } catch (e) {
@@ -274,9 +344,9 @@ export function useGeofence(
       isComponentMounted = false;
       subscription?.remove();
     };
-  }, [checkGeofences]);
+  }, [checkGeofences, updateAttendanceLocation]);
 
-    const requestPermission = async () => {
+  const requestPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     return status === 'granted';
   };
@@ -294,5 +364,11 @@ export function useGeofence(
     activeGeofenceLocations,
     canSelectLocation: userLocationType === "ABSOLUTE",
     requestPermission,
+    // New exports for attendance functionality
+    captureLocationForAttendance,
+    updateAttendanceLocation,
   };
 }
+
+// Export the types for use in other components
+export type { AttendanceCoordinates, AttendanceUpdateCallback };

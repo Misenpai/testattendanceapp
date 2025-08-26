@@ -70,7 +70,7 @@ export function AttendanceContainer() {
   const geofence = useGeofence(
     selectedGeofenceId,
     userLocationType,
-    isFieldTrip,
+    isFieldTrip
   );
 
   useEffect(() => {
@@ -87,7 +87,7 @@ export function AttendanceContainer() {
 
   const updateSelectedLocationLabel = useCallback(
     (label: string) => setSelectedLocationLabel(label),
-    [setSelectedLocationLabel],
+    [setSelectedLocationLabel]
   );
 
   useEffect(() => {
@@ -124,7 +124,7 @@ export function AttendanceContainer() {
 
     if (selectedLocationLabel && canSelectLocation) {
       const fence = activeLocations.find(
-        (g) => g.label === selectedLocationLabel,
+        (g) => g.label === selectedLocationLabel
       );
       if (fence && geofence.userPos) {
         const R = 6371000;
@@ -165,6 +165,8 @@ export function AttendanceContainer() {
       : "Outside (Unknown Location)";
   };
 
+  // Update the handleUpload function in AttendanceContainer.tsx
+
   const handleUpload = async () => {
     const finalLocation = resolveAttendanceLocation();
 
@@ -172,6 +174,9 @@ export function AttendanceContainer() {
       Alert.alert("Error", "Please login to mark attendance");
       return;
     }
+
+    // Get current coordinates from geofence
+    const userCoordinates = geofence.userPos;
 
     setUploading(true);
     try {
@@ -183,6 +188,8 @@ export function AttendanceContainer() {
         photos,
         audioRecording: audioRecording || undefined,
         location: finalLocation,
+        latitude: userCoordinates?.lat,
+        longitude: userCoordinates?.lng,
       });
 
       if (result.success) {
@@ -194,7 +201,24 @@ export function AttendanceContainer() {
           { text: "OK", onPress: resetAll },
         ]);
       } else {
-        Alert.alert("Error", result.error ?? "Upload failed");
+        // Check if token expired
+        if (result.error === "Session expired. Please login again.") {
+          Alert.alert(
+            "Session Expired",
+            "Your session has expired. Please login again.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  // Force logout
+                  useAuthStore.getState().signOut();
+                },
+              },
+            ]
+          );
+        } else {
+          Alert.alert("Error", result.error ?? "Upload failed");
+        }
       }
     } catch (error) {
       console.error("Upload error:", error);
@@ -217,7 +241,7 @@ export function AttendanceContainer() {
         mapCenter={geofence.mapCenter}
       />
     ),
-    [geofence],
+    [geofence]
   );
 
   if (isLoadingUserId) return <LoadingScreen text="Loading..." />;

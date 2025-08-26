@@ -244,11 +244,23 @@ export const useAttendanceStore = create<AttendanceState>()(
       fetchTodayAttendanceFromServer: async () => {
         const state = get();
         if (!state.userId) return false;
+        
         try {
+          // Import auth store to get headers
+          const { useAuthStore } = await import("./authStore");
+          const authHeaders = useAuthStore.getState().getAuthHeaders();
+
           const res = await fetch(
             `${process.env.EXPO_PUBLIC_API_BASE}/attendance/today/${state.userId}`,
-            { cache: "no-cache" },
+            { 
+              cache: "no-cache",
+              headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders
+              }
+            },
           );
+          
           const data = await res.json();
           const today = getTodayDateString();
 
@@ -348,6 +360,10 @@ export const useAttendanceStore = create<AttendanceState>()(
         try {
           console.log("Fetching location settings for username:", state.userId);
 
+          // Import auth store to get headers
+          const { useAuthStore } = await import("./authStore");
+          const authHeaders = useAuthStore.getState().getAuthHeaders();
+
           // Use username endpoint instead of empId
           const res = await fetch(
             `${process.env.EXPO_PUBLIC_API_BASE}/user-location/username/${state.userId}`,
@@ -355,6 +371,7 @@ export const useAttendanceStore = create<AttendanceState>()(
               method: "GET",
               headers: {
                 "Content-Type": "application/json",
+                ...authHeaders,
               },
               cache: "no-cache",
             },
@@ -425,12 +442,17 @@ export const useAttendanceStore = create<AttendanceState>()(
         try {
           console.log("Checking field trip status for username:", state.userId);
 
+          // Import auth store to get headers
+          const { useAuthStore } = await import("./authStore");
+          const authHeaders = useAuthStore.getState().getAuthHeaders();
+
           const res = await fetch(
             `${process.env.EXPO_PUBLIC_API_BASE}/user-location/username/${state.userId}`,
             {
               method: "GET",
               headers: {
                 "Content-Type": "application/json",
+                ...authHeaders,
               },
               cache: "no-cache",
             },

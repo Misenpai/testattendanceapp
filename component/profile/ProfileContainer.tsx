@@ -5,14 +5,17 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useProfile } from '../../hooks/useProfile';
 import { AttendanceCalendar } from './AttendanceCalendar';
+import { AvatarDisplay } from './AvatarDisplay';
+import { AvatarPicker } from './AvatarPicker';
 import { LocationDropdown } from './LocationDropdown';
 import { LogoutButton } from './LogoutButton';
 import { ProfileField } from './ProfileFieldProfile';
 
 export const ProfileContainer: React.FC = () => {
-  const { profile, updating, updateLocation } = useProfile();
+  const { profile, updating, updateLocation, updateAvatar } = useProfile();
   const [selectedLocation, setSelectedLocation] = useState(profile?.location || 'all');
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   React.useEffect(() => {
     if (profile?.location) {
@@ -29,6 +32,14 @@ export const ProfileContainer: React.FC = () => {
     }
   };
 
+  const handleAvatarSelect = async (avatarData: {
+    style: string;
+    seed: string;
+    url: string;
+  }) => {
+    await updateAvatar(avatarData);
+  };
+
   if (!profile) {
     return null;
   }
@@ -38,15 +49,29 @@ export const ProfileContainer: React.FC = () => {
       <View style={styles.content}>
         {/* Profile Avatar Section */}
         <View style={styles.avatarSection}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {profile.username.substring(0, 2).toUpperCase()}
-              </Text>
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={() => setShowAvatarPicker(true)}
+            disabled={updating}
+          >
+            {profile.avatar ? (
+              <AvatarDisplay avatarUrl={profile.avatar.url} size={100} />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {profile.username.substring(0, 2).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            {/* Edit overlay */}
+            <View style={styles.editOverlay}>
+              <FontAwesome6 name="camera" size={16} color="white" />
             </View>
+          </TouchableOpacity>
+          <View style={styles.text}>
+            <Text style={styles.welcomeText}>Welcome back!</Text>
+            <Text style={styles.usernameText}>{profile.username}</Text>
           </View>
-          <Text style={styles.welcomeText}>Welcome back!</Text>
-          <Text style={styles.usernameText}>{profile.username}</Text>
         </View>
 
         {/* Quick Stats Card */}
@@ -76,7 +101,7 @@ export const ProfileContainer: React.FC = () => {
         {/* Attendance Calendar Section */}
         {showCalendar && (
           <View style={styles.calendarSection}>
-            <AttendanceCalendar empId={profile.empId} />
+            <AttendanceCalendar empId={profile.empCode} />
           </View>
         )}
 
@@ -100,7 +125,7 @@ export const ProfileContainer: React.FC = () => {
           
           <ProfileField 
             label="Employee ID" 
-            value={profile.empId} 
+            value={profile.empCode} 
             isReadOnly 
             icon="id-card"
           />
@@ -117,6 +142,18 @@ export const ProfileContainer: React.FC = () => {
         </View>
         
         <LogoutButton disabled={updating} />
+
+        {/* Avatar Picker Modal */}
+        <AvatarPicker
+          visible={showAvatarPicker}
+          onClose={() => setShowAvatarPicker(false)}
+          onSelect={handleAvatarSelect}
+          currentAvatar={
+            profile.avatar && profile.avatar.style && profile.avatar.seed
+              ? { style: profile.avatar.style, seed: profile.avatar.seed }
+              : undefined
+          }
+        />
       </View>
     </ScrollView>
   );
@@ -141,6 +178,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    position: 'relative',
   },
   avatar: {
     width: 100,
@@ -155,6 +193,19 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: 'bold',
     color: 'white',
+  },
+  editOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: 'white',
   },
   welcomeText: {
     fontSize: 16,
@@ -223,5 +274,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1e293b',
     marginBottom: 16,
+  },
+  text: {
+    marginTop: 20,
+    alignItems: 'center',
   },
 });

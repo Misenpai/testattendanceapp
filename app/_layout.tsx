@@ -1,22 +1,59 @@
 // app/_layout.tsx
+import { TermsAndConditionsScreen } from "@/component/ui/TermsAndConditionsScreen";
 import { useAudio } from "@/hooks/useAudio";
 import { useCamera } from "@/hooks/useCamera";
 import { useGeofence as useLocation } from "@/hooks/useGeofence";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, Stack, useRootNavigationState, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
+import { Alert, AppState } from "react-native";
 import { useAuthStore } from "../store/authStore";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { TermsAndConditionsScreen } from "@/component/ui/TermsAndConditionsScreen";
 
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { session, isLoading, isInitialized, initializeAuth } = useAuthStore();
+  const { session, isLoading, isInitialized, initializeAuth, checkTokenExpiry } = useAuthStore();
   const segments = useSegments();
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
     if (!isInitialized) initializeAuth();
   }, [isInitialized, initializeAuth]);
+
+  // Check token expiry on app state change (when app comes to foreground)
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        // Check if token is still valid when app becomes active
+        if (session && !checkTokenExpiry()) {
+          Alert.alert(
+            'Session Expired',
+            'Your session has expired. Please login again.',
+            [{ text: 'OK', onPress: () => useAuthStore.getState().signOut() }]
+          );
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [session, checkTokenExpiry]);
+
+  // Check token expiry periodically (every minute)
+  useEffect(() => {
+    if (!session) return;
+
+    const interval = setInterval(() => {
+      if (!checkTokenExpiry()) {
+        Alert.alert(
+          'Session Expired',
+          'Your session has expired. Please login again.',
+          [{ text: 'OK', onPress: () => useAuthStore.getState().signOut() }]
+        );
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [session, checkTokenExpiry]);
 
   useEffect(() => {
     if (!navigationState?.key || isLoading || !isInitialized) return;

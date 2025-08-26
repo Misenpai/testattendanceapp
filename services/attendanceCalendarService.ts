@@ -1,4 +1,5 @@
 // services/attendanceCalendarService.ts
+import { useAuthStore } from "@/store/authStore";
 import axios from "axios";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE;
@@ -55,13 +56,19 @@ export interface AttendanceHistoryResponse {
   error?: string;
 }
 
-const apiClient = axios.create({
-  baseURL: API_BASE,
-  timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+const createApiClient = () => {
+  const authHeaders = useAuthStore.getState().getAuthHeaders();
+  
+  return axios.create({
+    baseURL: API_BASE,
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders
+    }
+  });
+};
+
 
 export const getAttendanceCalendar = async (
   empId: string,
@@ -72,6 +79,7 @@ export const getAttendanceCalendar = async (
     const params: any = {};
     if (year) params.year = year;
     if (month) params.month = month;
+    const apiClient = createApiClient();
 
     const { data } = await apiClient.get(
       `/attendance/calendar/${empId}`,
@@ -106,6 +114,7 @@ export const getAttendanceHistory = async (
     const params: any = { limit, offset };
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
+    const apiClient = createApiClient();
 
     const { data } = await apiClient.get(
       `/attendance/history/${empId}`,
