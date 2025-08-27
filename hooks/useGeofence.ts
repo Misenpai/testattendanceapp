@@ -22,11 +22,11 @@ interface AttendanceCoordinates {
 // Add this type for the callback
 type AttendanceUpdateCallback = (coordinates: AttendanceCoordinates) => void;
 
+// Update the useGeofence hook to handle field trips properly
 export function useGeofence(
   selectedGeofenceId?: string | null,
   userLocationType?: "ABSOLUTE" | "APPROX" | "FIELDTRIP" | null,
   isFieldTrip?: boolean,
-  // Add optional callback for attendance updates
   onLocationUpdate?: AttendanceUpdateCallback,
 ) {
   const [html, setHtml] = useState<string | null>(null);
@@ -35,12 +35,13 @@ export function useGeofence(
   const [currentLocation, setCurrentLocation] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Determine active geofence locations based on user location type
+  // Update active geofence locations logic
   const activeGeofenceLocations = useMemo(() => {
     if (userLocationType === "APPROX") {
       return [IIT_GUWAHATI_LOCATION];
-    } else if (userLocationType === "FIELDTRIP" && isFieldTrip) {
-      return []; // No geofences during field trips
+    } else if (userLocationType === "FIELDTRIP") {
+      // For field trips, return empty array but still track location
+      return [];
     }
 
     // ABSOLUTE type - use selected or all locations
@@ -50,7 +51,7 @@ export function useGeofence(
     return GEOFENCE_LOCATIONS.filter(
       (location) => location.id === selectedGeofenceId,
     );
-  }, [selectedGeofenceId, userLocationType, isFieldTrip]);
+  }, [selectedGeofenceId, userLocationType]);
 
   const haversine = useCallback(
     (lat1: number, lon1: number, lat2: number, lon2: number) => {

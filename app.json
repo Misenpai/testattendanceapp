@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "testattendanceapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -50,6 +54,7 @@
       "eas": {
         "projectId": "c7b33ae9-e0ef-4d6d-a58c-437dade42b6c"
       }
-    }
+    },
+    "owner": "misenpai"
   }
 }

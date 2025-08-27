@@ -1,14 +1,10 @@
 // component/attendance/AttendanceContainer.tsx
-import { FontAwesome6 } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   AppState,
   FlatList,
-  ListRenderItem,
-  Text,
-  View,
+  ListRenderItem
 } from "react-native";
 
 import { useCamera } from "@/hooks/useCamera";
@@ -16,7 +12,6 @@ import { useGeofence } from "@/hooks/useGeofence";
 import { useAttendanceStore } from "@/store/attendanceStore";
 import { useAuthStore } from "@/store/authStore";
 
-import { colors } from "@/constants/colors";
 import { attendanceContainerStyles, globalStyles } from "@/constants/style";
 
 import { useLocationStore } from "../../store/locationStore";
@@ -119,8 +114,14 @@ export function AttendanceContainer() {
     return () => subscription?.remove();
   }, [session, userName, checkFieldTripStatus]);
 
+  // ✅ Updated location resolution for field trips
   const resolveAttendanceLocation = () => {
     const activeLocations = geofence.activeGeofenceLocations;
+
+    // If on field trip, always return field trip location
+    if (isFieldTrip || userLocationType === "FIELDTRIP") {
+      return "Outside IIT (Field Trip)";
+    }
 
     if (selectedLocationLabel && canSelectLocation) {
       const fence = activeLocations.find(
@@ -165,8 +166,6 @@ export function AttendanceContainer() {
       : "Outside (Unknown Location)";
   };
 
-  // Update the handleUpload function in AttendanceContainer.tsx
-
   const handleUpload = async () => {
     const finalLocation = resolveAttendanceLocation();
 
@@ -175,7 +174,6 @@ export function AttendanceContainer() {
       return;
     }
 
-    // Get current coordinates from geofence
     const userCoordinates = geofence.userPos;
 
     setUploading(true);
@@ -201,7 +199,6 @@ export function AttendanceContainer() {
           { text: "OK", onPress: resetAll },
         ]);
       } else {
-        // Check if token expired
         if (result.error === "Session expired. Please login again.") {
           Alert.alert(
             "Session Expired",
@@ -210,7 +207,6 @@ export function AttendanceContainer() {
               {
                 text: "OK",
                 onPress: () => {
-                  // Force logout
                   useAuthStore.getState().signOut();
                 },
               },
@@ -251,35 +247,6 @@ export function AttendanceContainer() {
     );
   if (uploading)
     return <LoadingScreen text="Uploading..." subtext="Please wait" />;
-
-  if (isFieldTrip) {
-    return (
-      <View style={attendanceContainerStyles.fieldTripContainer}>
-        <LinearGradient
-          colors={[colors.success, "#059669"]}
-          style={attendanceContainerStyles.fieldTripGradient}
-        >
-          <FontAwesome6 name="route" size={48} color={colors.white} />
-          <Text style={attendanceContainerStyles.fieldTripTitle}>
-            Field Trip Mode
-          </Text>
-          <Text style={attendanceContainerStyles.fieldTripText}>
-            Your attendance is automatically marked while on field trip
-          </Text>
-          <View style={attendanceContainerStyles.fieldTripInfo}>
-            <FontAwesome6
-              name="calendar-check"
-              size={20}
-              color={colors.white}
-            />
-            <Text style={attendanceContainerStyles.fieldTripDate}>
-              Attendance marked for today
-            </Text>
-          </View>
-        </LinearGradient>
-      </View>
-    );
-  }
 
   if (showExpandedMap)
     return (

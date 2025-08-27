@@ -626,8 +626,8 @@ export function HomeView({
               <Text style={styles.greeting}>Good {getTimeOfDay()}!</Text>
               <Text style={styles.headerTitle}>
                 Mark Your Attendance
-                {forceShowAttendance && (
-                  <Text style={styles.testModeIndicator}> (Test Mode)</Text>
+                {userLocationType === "FIELDTRIP" && (
+                  <Text style={styles.fieldTripIndicator}> (Field Trip)</Text>
                 )}
               </Text>
               {/* Show location based on type */}
@@ -635,7 +635,7 @@ export function HomeView({
                 {userLocationType === "APPROX"
                   ? "📍 IIT Guwahati"
                   : userLocationType === "FIELDTRIP"
-                  ? "📍 Field Trip"
+                  ? "📍 Field Trip Location"
                   : showLocationSelector && selectedLocationLabel
                   ? `📍 ${selectedLocationLabel}`
                   : "📍 Auto-detecting location..."}
@@ -651,6 +651,16 @@ export function HomeView({
                     : "Absolute"}
                 </Text>
               </View>
+              
+              {/* Field trip notice */}
+              {userLocationType === "FIELDTRIP" && (
+                <View style={styles.fieldTripNotice}>
+                  <FontAwesome6 name="info-circle" size={12} color={colors.white} />
+                  <Text style={styles.fieldTripNoticeText}>
+                    Location will be marked as &quot;Outside IIT (Field Trip)&quot;
+                  </Text>
+                </View>
+              )}
             </View>
             <View style={styles.headerIcon}>
               <FontAwesome6
@@ -1052,5 +1062,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.white,
     fontWeight: "600",
+  },
+   fieldTripIndicator: {
+    fontSize: 14,
+    color: colors.warning,
+    fontWeight: "normal",
+  },
+  fieldTripNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  fieldTripNoticeText: {
+    fontSize: 11,
+    color: colors.white,
+    opacity: 0.9,
   },
 });
