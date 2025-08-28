@@ -4,19 +4,19 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { height: screenHeight } = Dimensions.get('window');
 
 interface TermsAndConditionsScreenProps {
   onAccept: () => void;
@@ -91,10 +91,7 @@ export function TermsAndConditionsScreen({
       </Animated.View>
 
       {/* Content */}
-      <Animated.View 
-        entering={FadeInUp.delay(200).springify()}
-        style={styles.contentContainer}
-      >
+      <View style={styles.contentContainer}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -116,7 +113,7 @@ export function TermsAndConditionsScreen({
             <View style={styles.bulletPoint}>
               <FontAwesome6 name="circle-check" size={14} color={colors.success} />
               <Text style={styles.bulletText}>
-                <Text style={styles.boldText}>No Data Misuse:</Text> We do not use your personal data, including images, audio recordings, location information, or login credentials for any malicious purposes.
+                <Text style={styles.boldText}>No Malicious Use:</Text> We do not use your personal data, including images, audio recordings, location information, or login credentials for any malicious purposes.
               </Text>
             </View>
             
@@ -144,12 +141,12 @@ export function TermsAndConditionsScreen({
             
             <Text style={styles.dataTypeTitle}>📸 Photos & Images</Text>
             <Text style={styles.dataDescription}>
-              Used solely for attendance verification and identification purposes. Images are processed locally and stored securely.
+              Images are collected solely for training our machine learning models to improve attendance verification accuracy. Photos are processed securely and used exclusively for model training purposes - never for malicious activities.
             </Text>
             
             <Text style={styles.dataTypeTitle}>🎤 Audio Recordings</Text>
             <Text style={styles.dataDescription}>
-              Voice recordings are used only for attendance authentication and are automatically processed for date verification.
+              Voice recordings are used exclusively for training our AI models to enhance voice verification systems. Audio data is processed securely and used only for legitimate training purposes to improve service quality.
             </Text>
             
             <Text style={styles.dataTypeTitle}>📍 Location Data</Text>
@@ -161,6 +158,38 @@ export function TermsAndConditionsScreen({
             <Text style={styles.dataDescription}>
               Login credentials and profile information are used only for account management and attendance tracking.
             </Text>
+          </View>
+
+          {/* Data Training Notice */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <FontAwesome6 name="brain" size={20} color={colors.primary[500]} />
+              <Text style={styles.sectionTitle}>AI Training & Model Improvement</Text>
+            </View>
+            <Text style={styles.sectionText}>
+              We use collected photos and audio recordings to train and improve our artificial intelligence models:
+            </Text>
+            
+            <View style={styles.bulletPoint}>
+              <FontAwesome6 name="robot" size={14} color={colors.info} />
+              <Text style={styles.bulletText}>
+                <Text style={styles.boldText}>Machine Learning Training:</Text> Your photos and audio help train our AI models to better recognize faces, voices, and attendance patterns.
+              </Text>
+            </View>
+            
+            <View style={styles.bulletPoint}>
+              <FontAwesome6 name="chart-line" size={14} color={colors.info} />
+              <Text style={styles.bulletText}>
+                <Text style={styles.boldText}>Service Improvement:</Text> Training data helps us improve accuracy, reduce errors, and enhance the overall user experience.
+              </Text>
+            </View>
+            
+            <View style={styles.bulletPoint}>
+              <FontAwesome6 name="shield-alt" size={14} color={colors.info} />
+              <Text style={styles.bulletText}>
+                <Text style={styles.boldText}>Ethical Use Only:</Text> All training data is used responsibly and ethically, never for harmful or malicious purposes.
+              </Text>
+            </View>
           </View>
 
           {/* Permissions Section */}
@@ -177,7 +206,7 @@ export function TermsAndConditionsScreen({
               <FontAwesome6 name="camera" size={16} color={colors.info} />
               <View style={styles.permissionContent}>
                 <Text style={styles.permissionTitle}>Camera Access</Text>
-                <Text style={styles.permissionDescription}>Required to capture attendance photos</Text>
+                <Text style={styles.permissionDescription}>Required to capture attendance photos for verification and training</Text>
               </View>
             </View>
             
@@ -185,7 +214,7 @@ export function TermsAndConditionsScreen({
               <FontAwesome6 name="microphone" size={16} color={colors.info} />
               <View style={styles.permissionContent}>
                 <Text style={styles.permissionTitle}>Microphone Access</Text>
-                <Text style={styles.permissionDescription}>Required to record voice verification</Text>
+                <Text style={styles.permissionDescription}>Required to record voice verification and improve AI models</Text>
               </View>
             </View>
             
@@ -230,7 +259,7 @@ export function TermsAndConditionsScreen({
           {/* Agreement Section */}
           <View style={styles.agreementSection}>
             <Text style={styles.agreementText}>
-              By tapping &quot;Accept Terms & Continue&quot;, you acknowledge that you have read, understood, and agree to these terms and conditions. You also consent to the collection and use of your data as described above for legitimate attendance tracking purposes only.
+              By tapping &quot;Accept Terms & Continue&quot;, you acknowledge that you have read, understood, and agree to these terms and conditions. You also consent to the collection and use of your data as described above for legitimate attendance tracking and AI training purposes only.
             </Text>
           </View>
 
@@ -242,7 +271,7 @@ export function TermsAndConditionsScreen({
             </View>
           )}
         </ScrollView>
-      </Animated.View>
+      </View>
 
       {/* Accept Button */}
       <Animated.View 
@@ -330,7 +359,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    marginTop: -10,
+    backgroundColor: colors.background.secondary,
   },
   scrollView: {
     flex: 1,

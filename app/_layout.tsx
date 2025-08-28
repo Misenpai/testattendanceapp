@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { Alert, AppState } from "react-native";
 import { useAuthStore } from "../store/authStore";
+import { NotificationProvider } from "@/provider/NotificationProvider";
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, isLoading, isInitialized, initializeAuth, checkTokenExpiry } = useAuthStore();
@@ -136,12 +137,14 @@ export default function RootLayout() {
   return (
     <AuthGate>
       <TermsGate>
-        <Stack>
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
+        <NotificationProvider>
+          <Stack>
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </NotificationProvider>
       </TermsGate>
     </AuthGate>
   );

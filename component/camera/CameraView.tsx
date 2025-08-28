@@ -8,7 +8,6 @@ import { Image } from "expo-image";
 import { FlipType, manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import React, { useEffect, useState } from "react";
 import {
-  Dimensions,
   Platform,
   Pressable,
   StatusBar,
@@ -28,8 +27,6 @@ import { useAttendanceStore } from "@/store/attendanceStore";
 import { CameraControls } from "./CameraControl";
 import { SelfieInstructions } from "./SelfieInstructions";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
-
 interface CameraViewProps {
   camera: any;
   currentPhotoIndex: number;
@@ -38,8 +35,6 @@ interface CameraViewProps {
   onPhotoTaken: (photo: any) => void;
   onBack: () => void;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function CameraView({
   camera,
