@@ -41,7 +41,7 @@ interface AttendanceState {
   lastAttendanceUpdate: number;
 
   // Field trip related state
-  userLocationType: "ABSOLUTE" | "APPROX" | "FIELDTRIP" | null;
+  userLocationType: "CAMPUS" | "FIELDTRIP" | null;
   isFieldTrip: boolean;
   fieldTripDates: { startDate: string; endDate: string }[];
 
@@ -49,7 +49,7 @@ interface AttendanceState {
   currentSessionType: "FORENOON" | "AFTERNOON" | null;
   canCheckout: boolean;
 
-  // NEW: department
+  // Department
   department: string | null;
 
   // Actions
@@ -71,9 +71,7 @@ interface AttendanceState {
   fetchTodayAttendanceFromServer: () => Promise<boolean>;
   triggerAttendanceUpdate: () => void;
   refreshAttendanceData: () => Promise<void>;
-  setUserLocationType: (
-    type: "ABSOLUTE" | "APPROX" | "FIELDTRIP" | null
-  ) => void;
+  setUserLocationType: (type: "CAMPUS" | "FIELDTRIP" | null) => void;
   checkFieldTripStatus: () => Promise<void>;
   fetchUserLocationSettings: () => Promise<void>;
 
@@ -81,8 +79,9 @@ interface AttendanceState {
   checkoutAttendance: () => Promise<boolean>;
   getCurrentSessionType: () => "FORENOON" | "AFTERNOON" | "OUTSIDE";
 
-  // NEW: department setter
+  // Department setter
   setDepartment: (department: string) => void;
+  fetchUserDepartment: () => Promise<void>;
 }
 
 const getTodayDateString = () => new Date().toISOString().split("T")[0];
@@ -137,8 +136,9 @@ export const useAttendanceStore = create<AttendanceState>()(
               isInitialized: true,
             });
 
-            // Fetch user location settings first, then attendance
+            // Fetch user location settings first, then department, then attendance
             await get().fetchUserLocationSettings();
+            await get().fetchUserDepartment();
             await get().fetchTodayAttendanceFromServer();
           } else {
             set({
@@ -174,6 +174,7 @@ export const useAttendanceStore = create<AttendanceState>()(
         if (userId) {
           setTimeout(async () => {
             await get().fetchUserLocationSettings();
+            await get().fetchUserDepartment();
             await get().fetchTodayAttendanceFromServer();
           }, 100);
         }
@@ -197,7 +198,7 @@ export const useAttendanceStore = create<AttendanceState>()(
           fieldTripDates: [],
           currentSessionType: null,
           canCheckout: false,
-          department: null, // NEW
+          department: null,
         });
       },
 
@@ -356,6 +357,7 @@ export const useAttendanceStore = create<AttendanceState>()(
       refreshAttendanceData: async () => {
         if (!get().userId) return;
         await get().fetchUserLocationSettings();
+        await get().fetchUserDepartment();
         await get().fetchTodayAttendanceFromServer();
         get().triggerAttendanceUpdate();
       },
@@ -407,17 +409,15 @@ export const useAttendanceStore = create<AttendanceState>()(
               }) || false;
 
             set({
-              userLocationType: locationData.locationType || "ABSOLUTE",
-              // Always preserve field trip dates from server, regardless of location type
+              userLocationType: isOnTrip ? "FIELDTRIP" : "CAMPUS",
+              // Always preserve field trip dates from server
               fieldTripDates: locationData.fieldTrips || [],
-              // Only set isFieldTrip true if currently on FIELDTRIP location type AND on an active trip
-              isFieldTrip:
-                locationData.locationType === "FIELDTRIP" && isOnTrip,
+              // Set isFieldTrip true if on an active trip
+              isFieldTrip: isOnTrip,
             });
             console.log("Updated location state:", {
-              userLocationType: locationData.locationType || "ABSOLUTE",
-              isFieldTrip:
-                locationData.locationType === "FIELDTRIP" && isOnTrip,
+              userLocationType: isOnTrip ? "FIELDTRIP" : "CAMPUS",
+              isFieldTrip: isOnTrip,
               fieldTripsCount: locationData.fieldTrips?.length || 0,
             });
           } else {
@@ -425,7 +425,7 @@ export const useAttendanceStore = create<AttendanceState>()(
             // Don't clear existing field trip dates if API call fails
             const currentState = get();
             set({
-              userLocationType: "ABSOLUTE",
+              userLocationType: "CAMPUS",
               isFieldTrip: false,
               // Keep existing fieldTripDates if they exist
               fieldTripDates: currentState.fieldTripDates || [],
@@ -436,7 +436,7 @@ export const useAttendanceStore = create<AttendanceState>()(
           // Don't clear existing field trip dates on error
           const currentState = get();
           set({
-            userLocationType: "ABSOLUTE",
+            userLocationType: "CAMPUS",
             isFieldTrip: false,
             // Keep existing fieldTripDates if they exist
             fieldTripDates: currentState.fieldTripDates || [],
@@ -446,86 +446,24 @@ export const useAttendanceStore = create<AttendanceState>()(
 
       // Simplified checkFieldTripStatus that uses fetchUserLocationSettings
       checkFieldTripStatus: async () => {
-        const state = get();
-        if (!state.userId) return;
+        await get().fetchUserLocationSettings();
+      },
 
+      fetchUserDepartment: async () => {
         try {
-          console.log("Checking field trip status for username:", state.userId);
-
-          // Import auth store to get headers
+          // Access auth store
           const { useAuthStore } = await import("./authStore");
-          const authHeaders = useAuthStore.getState().getAuthHeaders();
+          const projects = useAuthStore.getState().projects;
 
-          const res = await fetch(
-            `${process.env.EXPO_PUBLIC_API_BASE}/user-field-trips/username/${state.userId}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                ...authHeaders,
-              },
-              cache: "no-cache",
-            }
-          );
-
-          const data = await res.json();
-          console.log("Field trip check response:", data);
-
-          if (data.success && data.data) {
-            const locationData = data.data;
-
-            // Check if user is currently on a field trip
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            let isOnTrip = false;
-            let previousLocationType = locationData.locationType;
-
-            // Store the non-fieldtrip location type
-            if (locationData.locationType !== "FIELDTRIP") {
-              // Store this as the default location type
-              await AsyncStorage.setItem(
-                "defaultLocationType",
-                locationData.locationType
-              );
-            } else {
-              // Retrieve the stored default location type
-              const stored = await AsyncStorage.getItem("defaultLocationType");
-              if (stored) {
-                previousLocationType = stored as "ABSOLUTE" | "APPROX";
-              }
-            }
-
-            // Check if today falls within any field trip dates
-            if (locationData.fieldTrips && locationData.fieldTrips.length > 0) {
-              isOnTrip = locationData.fieldTrips.some((trip: any) => {
-                const start = new Date(trip.startDate);
-                const end = new Date(trip.endDate);
-                start.setHours(0, 0, 0, 0);
-                end.setHours(23, 59, 59, 999);
-                return today >= start && today <= end && trip.isActive;
-              });
-            }
-
-            // Set location type based on whether we're on a field trip today
-            const effectiveLocationType = isOnTrip
-              ? "FIELDTRIP"
-              : previousLocationType;
-
-            set({
-              userLocationType: effectiveLocationType,
-              fieldTripDates: locationData.fieldTrips || [],
-              isFieldTrip: isOnTrip,
-            });
-
-            console.log("Updated location state:", {
-              userLocationType: effectiveLocationType,
-              isFieldTrip: isOnTrip,
-              fieldTripsCount: locationData.fieldTrips?.length || 0,
-            });
+          if (projects && projects.length > 0) {
+            // Take department from the first project (same logic as ProfileContainer)
+            set({ department: projects[0].department });
+          } else {
+            set({ department: null });
           }
         } catch (err) {
-          console.error("Error checking field trip status:", err);
+          console.error("Error setting department from auth store:", err);
+          set({ department: null });
         }
       },
 
@@ -582,7 +520,7 @@ export const useAttendanceStore = create<AttendanceState>()(
         fieldTripDates: state.fieldTripDates,
         currentSessionType: state.currentSessionType,
         canCheckout: state.canCheckout,
-        department: state.department, // NEW
+        department: state.department,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
@@ -590,6 +528,7 @@ export const useAttendanceStore = create<AttendanceState>()(
           if (state.userId) {
             setTimeout(() => {
               state.fetchUserLocationSettings();
+              state.fetchUserDepartment();
             }, 1000);
           }
         }

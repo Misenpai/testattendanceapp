@@ -1,8 +1,10 @@
 // hooks/useGeofence.ts
 import {
-  GEOFENCE_LOCATIONS,
+  BUILDINGS,
+  DEPT_TO_BUILDING,
   IIT_GUWAHATI_LOCATION,
 } from "@/constants/geofenceLocation";
+import { useAttendanceStore } from "@/store/attendanceStore";
 import { LatLng, MapLayer, MapMarker, MapShape } from "@/types/geofence";
 import { Asset } from "expo-asset";
 import * as FileSystem from "expo-file-system";
@@ -24,8 +26,7 @@ type AttendanceUpdateCallback = (coordinates: AttendanceCoordinates) => void;
 
 // Update the useGeofence hook to handle field trips properly
 export function useGeofence(
-  selectedGeofenceId?: string | null,
-  userLocationType?: "ABSOLUTE" | "APPROX" | "FIELDTRIP" | null,
+  userLocationType?: "CAMPUS" | "FIELDTRIP" | null,
   isFieldTrip?: boolean,
   onLocationUpdate?: AttendanceUpdateCallback,
 ) {
@@ -35,23 +36,29 @@ export function useGeofence(
   const [currentLocation, setCurrentLocation] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const department = useAttendanceStore((state) => state.department);
+
   // Update active geofence locations logic
   const activeGeofenceLocations = useMemo(() => {
-    if (userLocationType === "APPROX") {
-      return [IIT_GUWAHATI_LOCATION];
-    } else if (userLocationType === "FIELDTRIP") {
+    if (userLocationType === "FIELDTRIP") {
       // For field trips, return empty array but still track location
       return [];
     }
 
-    // ABSOLUTE type - use selected or all locations
-    if (!selectedGeofenceId) {
-      return GEOFENCE_LOCATIONS;
+    // CAMPUS type - IIT + user's building
+    if (!department) {
+      return [IIT_GUWAHATI_LOCATION];
     }
-    return GEOFENCE_LOCATIONS.filter(
-      (location) => location.id === selectedGeofenceId,
-    );
-  }, [selectedGeofenceId, userLocationType]);
+
+    const buildingId = DEPT_TO_BUILDING[department];
+    const building = BUILDINGS.find((b) => b.id === buildingId);
+
+    if (!building) {
+      return [IIT_GUWAHATI_LOCATION];
+    }
+
+    return [IIT_GUWAHATI_LOCATION, building];
+  }, [department, userLocationType]);
 
   const haversine = useCallback(
     (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -72,22 +79,38 @@ export function useGeofence(
 
   const checkGeofences = useCallback(
     (position: LatLng) => {
-      // Use active geofence locations instead of all locations
-      for (const geofence of activeGeofenceLocations) {
-        const distance = haversine(
-          position.lat,
-          position.lng,
-          geofence.center.lat,
-          geofence.center.lng,
-        );
-
-        if (distance <= geofence.radius) {
-          return geofence.label;
-        }
+      if (userLocationType === "FIELDTRIP") {
+        return "Outside IIT (Field Trip)";
       }
+
+      if (activeGeofenceLocations.length < 2) {
+        return null;
+      }
+
+      const iit = activeGeofenceLocations[0];
+      const building = activeGeofenceLocations[1];
+
+      const distToIIT = haversine(
+        position.lat,
+        position.lng,
+        iit.center.lat,
+        iit.center.lng,
+      );
+
+      const distToBuilding = haversine(
+        position.lat,
+        position.lng,
+        building.center.lat,
+        building.center.lng,
+      );
+
+      if (distToIIT <= iit.radius && distToBuilding <= building.radius) {
+        return building.label;
+      }
+
       return null;
     },
-    [haversine, activeGeofenceLocations],
+    [haversine, activeGeofenceLocations, userLocationType],
   );
 
   // Add function to send coordinates to attendance service
@@ -143,17 +166,12 @@ export function useGeofence(
     (): MapShape[] =>
       activeGeofenceLocations.map((geofence, index) => ({
         shapeType: MapShapeType.CIRCLE,
-        color:
-          userLocationType === "APPROX"
-            ? "#00a8ff"
-            : index === 0
-              ? "#00f"
-              : "#f00",
+        color: index === 0 ? "#00a8ff" : "#f00", // IIT blue, building red
         id: geofence.id,
         center: geofence.center,
         radius: geofence.radius,
       })),
-    [activeGeofenceLocations, userLocationType],
+    [activeGeofenceLocations],
   );
 
   const mapLayers = useMemo(
@@ -164,7 +182,7 @@ export function useGeofence(
         baseLayer: true,
         url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+          '&copy; <a href="https://www.openstreetmap.org/copyright ">OSM</a>',
       },
     ],
     [],
@@ -173,7 +191,7 @@ export function useGeofence(
   const staticLabelMarkers = useMemo(
     (): MapMarker[] =>
       activeGeofenceLocations.map((g, idx) => {
-        const offsetLat = g.center.lat + 0.00015;
+        const offsetLat = g.center.lat + 0.00015 * (idx + 1); // Slight offset for labels
         const offsetLng = g.center.lng;
 
         return {
@@ -182,13 +200,13 @@ export function useGeofence(
           icon: `
             <div style="
               position: relative;
-              background: ${userLocationType === "APPROX" ? "#00a8ff" : "#fff"};
-              border: 2px solid ${userLocationType === "APPROX" ? "#fff" : "#333"};
+              background: ${idx === 0 ? "#00a8ff" : "#f00"};
+              border: 2px solid #fff;
               border-radius: 8px;
               padding: 6px 10px;
               font-size: 12px;
               font-weight: bold;
-              color: ${userLocationType === "APPROX" ? "#fff" : "#333"};
+              color: #fff;
               white-space: nowrap;
               box-shadow: 0 2px 6px rgba(0,0,0,0.3);
               min-width: 80px;
@@ -204,7 +222,7 @@ export function useGeofence(
                 height: 0;
                 border-left: 8px solid transparent;
                 border-right: 8px solid transparent;
-                border-top: 8px solid ${userLocationType === "APPROX" ? "#fff" : "#333"};
+                border-top: 8px solid ${idx === 0 ? "#00a8ff" : "#f00"};
               "></div>
             </div>
           `,
@@ -212,7 +230,7 @@ export function useGeofence(
           anchor: [50, 35],
         };
       }),
-    [activeGeofenceLocations, userLocationType],
+    [activeGeofenceLocations],
   );
 
   const mapMarkers = useMemo((): MapMarker[] => {
@@ -363,13 +381,9 @@ export function useGeofence(
     mapMarkers,
     mapCenter: mapCenter || initialPos,
     activeGeofenceLocations,
-    canSelectLocation: userLocationType === "ABSOLUTE",
     requestPermission,
     // New exports for attendance functionality
     captureLocationForAttendance,
     updateAttendanceLocation,
   };
 }
-
-// Export the types for use in other components
-export type { AttendanceCoordinates, AttendanceUpdateCallback };

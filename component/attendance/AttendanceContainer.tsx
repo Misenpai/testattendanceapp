@@ -1,5 +1,5 @@
 // component/attendance/AttendanceContainer.tsx
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   AppState,
@@ -14,7 +14,6 @@ import { useAuthStore } from "@/store/authStore";
 
 import { attendanceContainerStyles, globalStyles } from "@/constants/style";
 
-import { useLocationStore } from "../../store/locationStore";
 import { AudioRecorder } from "../audio/AudioRecorder";
 import { CameraView } from "../camera/CameraView";
 import { ExpandedMapView } from "../map/ExpandedMapView";
@@ -22,6 +21,7 @@ import { GeofenceMap } from "../map/GeofenceMap";
 import { MapCard } from "../map/MapCard";
 import { LoadingScreen } from "../ui/LoadingScreen";
 import { HomeView } from "./HomeView";
+import { BUILDINGS, DEPT_TO_BUILDING, IIT_GUWAHATI_LOCATION } from "@/constants/geofenceLocation";
 
 type ListItem = { id: string; type: "map" | "attendance" };
 
@@ -36,7 +36,6 @@ export function AttendanceContainer() {
     uploading,
     currentPhotoIndex,
     retakeMode,
-    selectedLocationLabel,
     TOTAL_PHOTOS,
     initializeUserId,
     setPhotos,
@@ -44,7 +43,6 @@ export function AttendanceContainer() {
     setCurrentView,
     setCurrentPhotoIndex,
     setRetakeMode,
-    setSelectedLocationLabel,
     setUploading,
     resetAll,
     todayAttendanceMarked,
@@ -56,14 +54,11 @@ export function AttendanceContainer() {
 
   const { session, userName } = useAuthStore();
   const camera = useCamera();
-  const { selectedGeofenceId, selectedLocationLabel: locationStoreLabel } =
-    useLocationStore();
 
   const [showExpandedMap, setShowExpandedMap] = useState(false);
   const [isMapTouched, setIsMapTouched] = useState(false);
 
   const geofence = useGeofence(
-    selectedGeofenceId,
     userLocationType,
     isFieldTrip
   );
@@ -77,19 +72,6 @@ export function AttendanceContainer() {
   useEffect(() => {
     checkFieldTripStatus();
   }, [checkFieldTripStatus]);
-
-  const canSelectLocation = userLocationType === "ABSOLUTE";
-
-  const updateSelectedLocationLabel = useCallback(
-    (label: string) => setSelectedLocationLabel(label),
-    [setSelectedLocationLabel]
-  );
-
-  useEffect(() => {
-    if (locationStoreLabel && selectedGeofenceId) {
-      updateSelectedLocationLabel(locationStoreLabel);
-    }
-  }, [locationStoreLabel, selectedGeofenceId, updateSelectedLocationLabel]);
 
   useEffect(() => {
     checkTodayAttendance();
@@ -116,54 +98,51 @@ export function AttendanceContainer() {
 
   // ✅ Updated location resolution for field trips
   const resolveAttendanceLocation = () => {
-    const activeLocations = geofence.activeGeofenceLocations;
-
     // If on field trip, always return field trip location
     if (isFieldTrip || userLocationType === "FIELDTRIP") {
       return "Outside IIT (Field Trip)";
     }
 
-    if (selectedLocationLabel && canSelectLocation) {
-      const fence = activeLocations.find(
-        (g) => g.label === selectedLocationLabel
-      );
-      if (fence && geofence.userPos) {
-        const R = 6371000;
-        const toRad = (deg: number) => (deg * Math.PI) / 180;
-        const dLat = toRad(fence.center.lat - geofence.userPos.lat);
-        const dLng = toRad(fence.center.lng - geofence.userPos.lng);
-        const a =
-          Math.sin(dLat / 2) ** 2 +
-          Math.cos(toRad(geofence.userPos.lat)) *
-            Math.cos(toRad(fence.center.lat)) *
-            Math.sin(dLng / 2) ** 2;
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const inside = R * c <= fence.radius;
-        if (inside) return selectedLocationLabel;
+    const position = geofence.userPos;
+    if (!position) return "Outside (Unknown Location)";
 
-        return `Outside (${selectedLocationLabel})`;
-      }
-      return `Outside (${selectedLocationLabel})`;
-    }
+    const iit = IIT_GUWAHATI_LOCATION;
+    const department = useAttendanceStore.getState().department;
+    const buildingId = department ? DEPT_TO_BUILDING[department] : null;
+    const building = buildingId ? BUILDINGS.find(b => b.id === buildingId) : null;
 
-    for (const g of activeLocations) {
-      if (!geofence.userPos) break;
-      const R = 6371000;
-      const toRad = (deg: number) => (deg * Math.PI) / 180;
-      const dLat = toRad(g.center.lat - geofence.userPos.lat);
-      const dLng = toRad(g.center.lng - geofence.userPos.lng);
+    const R = 6371000;
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+
+    const insideIIT = (() => {
+      const dLat = toRad(iit.center.lat - position.lat);
+      const dLng = toRad(iit.center.lng - position.lng);
       const a =
         Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRad(geofence.userPos.lat)) *
-          Math.cos(toRad(g.center.lat)) *
+        Math.cos(toRad(position.lat)) *
+          Math.cos(toRad(iit.center.lat)) *
           Math.sin(dLng / 2) ** 2;
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      if (R * c <= g.radius) return g.label;
-    }
+      return R * c <= iit.radius;
+    })();
 
-    return userLocationType === "APPROX"
-      ? "Outside (IIT Guwahati)"
-      : "Outside (Unknown Location)";
+    if (!insideIIT || !building) return "Outside (IIT Guwahati)";
+
+    const insideBuilding = (() => {
+      const dLat = toRad(building.center.lat - position.lat);
+      const dLng = toRad(building.center.lng - position.lng);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(position.lat)) *
+          Math.cos(toRad(building.center.lat)) *
+          Math.sin(dLng / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c <= building.radius;
+    })();
+
+    if (insideBuilding) return building.label;
+
+    return "Outside (IIT Guwahati)";
   };
 
   const handleUpload = async () => {
@@ -330,9 +309,7 @@ export function AttendanceContainer() {
                 onUpload={handleUpload}
                 uploading={uploading}
                 totalPhotos={TOTAL_PHOTOS}
-                selectedLocationLabel={selectedLocationLabel}
                 todayAttendanceMarked={todayAttendanceMarked}
-                canSelectLocation={canSelectLocation}
               />
             );
           default:

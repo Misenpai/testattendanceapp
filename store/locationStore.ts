@@ -1,4 +1,6 @@
-import { GEOFENCE_LOCATIONS } from '@/constants/geofenceLocation';
+// store/locationStore.ts
+import { BUILDINGS } from '@/constants/geofenceLocation'; // Corrected import
+import { GeofenceLocation } from '@/types/geofence'; // Import the type for type safety
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -22,7 +24,8 @@ export const useLocationStore = create<LocationState>()(
         set({ selectedGeofenceId: geofenceId, selectedLocationLabel: label }),
 
       setLocationByLabel: (label) => {
-        const geofenceLocation = GEOFENCE_LOCATIONS.find(g => g.label === label);
+        // Added 'GeofenceLocation' type to the parameter 'g'
+        const geofenceLocation = BUILDINGS.find((g: GeofenceLocation) => g.label === label);
         if (geofenceLocation) {
           set({ 
             selectedGeofenceId: geofenceLocation.id, 
@@ -40,4 +43,3 @@ export const useLocationStore = create<LocationState>()(
     }
   )
 );
-

@@ -54,6 +54,7 @@ export const uploadAttendanceData = async ({
 
     const form = new FormData();
     const uploadTimestamp = Date.now();
+    form.append("locationType", "CAMPUS");
     
     form.append("username", userId.toString());
     form.append("timestamp", uploadTimestamp.toString());

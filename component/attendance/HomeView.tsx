@@ -31,9 +31,7 @@ interface HomeViewProps {
   onUpload: () => void;
   uploading: boolean;
   totalPhotos: number;
-  selectedLocationLabel: string | null;
   todayAttendanceMarked?: boolean;
-  canSelectLocation: boolean;
 }
 
 // Session Time Display Component
@@ -241,66 +239,11 @@ function AttendanceStatusCard({ attendance }: { attendance: any }) {
   );
 }
 
-// Developer Mode Toggle Component
-function DeveloperModeToggle({
-  isEnabled,
-  onToggle,
-}: {
-  isEnabled: boolean;
-  onToggle: () => void;
-}) {
-  const [tapCount, setTapCount] = useState(0);
-  const [lastTapTime, setLastTapTime] = useState(0);
-
-  const handleSecretTap = () => {
-    const now = Date.now();
-    if (now - lastTapTime > 2000) {
-      setTapCount(1);
-    } else {
-      setTapCount((prev) => prev + 1);
-    }
-    setLastTapTime(now);
-
-    if (tapCount >= 4) {
-      onToggle();
-      setTapCount(0);
-      Alert.alert(
-        "Developer Mode",
-        isEnabled
-          ? "Developer mode disabled"
-          : "Developer mode enabled - You can now mark attendance multiple times for testing",
-        [{ text: "OK" }]
-      );
-    }
-  };
-
-  return (
-    <TouchableOpacity
-      onPress={handleSecretTap}
-      style={styles.secretTapArea}
-      activeOpacity={1}
-    >
-      <View style={styles.devModeIndicator}>
-        {isEnabled && (
-          <View style={styles.devModeBadge}>
-            <FontAwesome6 name="code" size={12} color={colors.white} />
-            <Text style={styles.devModeText}>DEV</Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-// Attendance Marked Card with Override Button
+// Attendance Marked Card
 function AttendanceMarkedCard({
-  onOverride,
-  devModeEnabled,
   todayRecord,
   onCheckout,
 }: {
-  onOverride: () => void;
-  devModeEnabled: boolean;
   todayRecord: any;
   onCheckout: () => void;
 }) {
@@ -349,17 +292,6 @@ function AttendanceMarkedCard({
             isCheckedOut={todayRecord.isCheckedOut}
           />
         )}
-
-        {devModeEnabled && (
-          <TouchableOpacity
-            style={styles.overrideButton}
-            onPress={onOverride}
-            activeOpacity={0.8}
-          >
-            <FontAwesome6 name="flask-vial" size={16} color={colors.white} />
-            <Text style={styles.overrideButtonText}>Test Mode: Mark Again</Text>
-          </TouchableOpacity>
-        )}
       </LinearGradient>
     </Animated.View>
   );
@@ -375,20 +307,12 @@ export function HomeView({
   onUpload,
   uploading,
   totalPhotos,
-  selectedLocationLabel,
   todayAttendanceMarked = false,
-  canSelectLocation,
 }: HomeViewProps) {
-  const [devModeEnabled, setDevModeEnabled] = useState(false);
-  const [forceShowAttendance, setForceShowAttendance] = useState(false);
-
   const { userLocationType } = useAttendanceStore();
   const attendanceRecords = useAttendanceStore(
     (state) => state.attendanceRecords
   );
-
-  // Disable department selection for non-ABSOLUTE users
-  const showLocationSelector = userLocationType === "ABSOLUTE";
 
   const todayDateString = new Date().toISOString().split("T")[0];
   const todayRecord = attendanceRecords.find(
@@ -404,17 +328,6 @@ export function HomeView({
 
     refreshAttendanceStatus();
   }, []);
-
-  const handleOverrideAttendance = () => {
-    Alert.alert(
-      "Test Mode",
-      "This will allow you to mark attendance again for testing. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Continue", onPress: () => setForceShowAttendance(true) },
-      ]
-    );
-  };
 
   const handleCheckout = async () => {
     Alert.alert(
@@ -457,11 +370,6 @@ export function HomeView({
     );
   };
 
-  const toggleDevMode = () => {
-    setDevModeEnabled(!devModeEnabled);
-    if (devModeEnabled) setForceShowAttendance(false);
-  };
-
   // Helper function to format time
   const formatTime = (timeString: string | null) => {
     if (!timeString) return "Invalid Date";
@@ -479,7 +387,7 @@ export function HomeView({
   };
 
   // Attendance Marked branch
-  if (todayAttendanceMarked && !forceShowAttendance && todayRecord) {
+  if (todayAttendanceMarked && todayRecord) {
     return (
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header Card */}
@@ -497,25 +405,16 @@ export function HomeView({
               <View style={styles.headerTextContainer}>
                 <Text style={styles.greeting}>Good {getTimeOfDay()}!</Text>
                 <Text style={styles.headerTitle}>Attendance Status</Text>
-                {/* Show location based on type */}
                 <Text style={styles.headerSubtitle}>
-                  {userLocationType === "APPROX"
-                    ? "📍 IIT Guwahati"
-                    : userLocationType === "FIELDTRIP"
-                    ? "📍 Field Trip"
-                    : showLocationSelector && selectedLocationLabel
-                    ? `📍 ${selectedLocationLabel}`
-                    : "📍 Auto-detecting location..."}
+                  {userLocationType === "FIELDTRIP"
+                    ? "📍 Outside IIT (Field Trip)"
+                    : "📍 IIT Guwahati - Department Building"}
                 </Text>
-                {/* Location type badge */}
-                {/* Location type badge */}
                 <View style={styles.locationTypeBadge}>
                   <Text style={styles.locationTypeText}>
                     Mode:{" "}
                     {userLocationType === "FIELDTRIP"
                       ? "Field Trip"
-                      : userLocationType === "APPROX"
-                      ? "Approx"
                       : "Absolute"}
                   </Text>
                 </View>
@@ -526,10 +425,6 @@ export function HomeView({
                   size={40}
                   color={colors.white}
                 />
-                <DeveloperModeToggle
-                  isEnabled={devModeEnabled}
-                  onToggle={toggleDevMode}
-                />
               </View>
             </View>
           </LinearGradient>
@@ -537,8 +432,6 @@ export function HomeView({
 
         {/* Attendance Marked Card */}
         <AttendanceMarkedCard
-          onOverride={handleOverrideAttendance}
-          devModeEnabled={devModeEnabled}
           todayRecord={todayRecord}
           onCheckout={handleCheckout}
         />
@@ -560,8 +453,6 @@ export function HomeView({
             <Text style={styles.sectionDescription}>
               Your attendance has been successfully recorded and completed for
               today.
-              {devModeEnabled &&
-                " Developer mode is active - you can test marking attendance again."}
             </Text>
 
             <View style={styles.summaryRow}>
@@ -630,32 +521,28 @@ export function HomeView({
                   <Text style={styles.fieldTripIndicator}> (Field Trip)</Text>
                 )}
               </Text>
-              {/* Show location based on type */}
               <Text style={styles.headerSubtitle}>
-                {userLocationType === "APPROX"
-                  ? "📍 IIT Guwahati"
-                  : userLocationType === "FIELDTRIP"
-                  ? "📍 Field Trip Location"
-                  : showLocationSelector && selectedLocationLabel
-                  ? `📍 ${selectedLocationLabel}`
-                  : "📍 Auto-detecting location..."}
+                {userLocationType === "FIELDTRIP"
+                  ? "📍 Outside IIT (Field Trip)"
+                  : "📍 IIT Guwahati - Department Building"}
               </Text>
-              {/* Location type badge */}
               <View style={styles.locationTypeBadge}>
                 <Text style={styles.locationTypeText}>
                   Mode:{" "}
                   {userLocationType === "FIELDTRIP"
                     ? "Field Trip"
-                    : userLocationType === "APPROX"
-                    ? "Approx"
                     : "Absolute"}
                 </Text>
               </View>
-              
+
               {/* Field trip notice */}
               {userLocationType === "FIELDTRIP" && (
                 <View style={styles.fieldTripNotice}>
-                  <FontAwesome6 name="info-circle" size={12} color={colors.white} />
+                  <FontAwesome6
+                    name="info-circle"
+                    size={12}
+                    color={colors.white}
+                  />
                   <Text style={styles.fieldTripNoticeText}>
                     Location will be marked as &quot;Outside IIT (Field Trip)&quot;
                   </Text>
@@ -667,10 +554,6 @@ export function HomeView({
                 name="calendar-check"
                 size={40}
                 color={colors.white}
-              />
-              <DeveloperModeToggle
-                isEnabled={devModeEnabled}
-                onToggle={toggleDevMode}
               />
             </View>
           </View>
@@ -997,58 +880,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: colors.white,
   },
-  // Developer Mode Styles
-  secretTapArea: {
-    position: "absolute",
-    top: -10,
-    right: -10,
-    width: 60,
-    height: 60,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  devModeIndicator: {
-    position: "absolute",
-    top: -35,
-    right: -5,
-  },
-  devModeBadge: {
-    flexDirection: "row",
-    backgroundColor: colors.warning,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignItems: "center",
-    gap: 4,
-  },
-  devModeText: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: colors.white,
-  },
-  overrideButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  overrideButtonText: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  testModeIndicator: {
-    fontSize: 12,
-    color: colors.warning,
-    fontWeight: "normal",
-  },
   // Location Type Badge Styles
   locationTypeBadge: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -1063,7 +894,7 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: "600",
   },
-   fieldTripIndicator: {
+  fieldTripIndicator: {
     fontSize: 14,
     color: colors.warning,
     fontWeight: "normal",
