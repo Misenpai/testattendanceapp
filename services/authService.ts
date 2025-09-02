@@ -1,25 +1,14 @@
-// services/authService.ts
 import axios from "axios";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE;
 
 export interface AuthResponse {
   success: boolean;
-  empCode?: string;
+  employeeNumber?: string;
   username?: string;
-  token?: string;  // JWT token
-  user?: {
-    userKey: string;
-    empCode: string;
-    username: string;
-    email: string;
-    location?: string;
-    role?: 'USER' | 'SYSTEM';
-    isActive?: boolean;
-    userLocation?: {
-      locationType: 'ABSOLUTE' | 'APPROX' | 'FIELDTRIP';
-    };
-  };
+  empClass?: string;
+  projects?: { projectCode: string; department: string }[];
+  token?: string;
   error?: string;
   message?: string;
 }
@@ -32,47 +21,6 @@ const apiClient = axios.create({
   }
 });
 
-export const signupUser = async (
-  empCode: string,
-  username: string, 
-  email: string, 
-  password: string
-): Promise<AuthResponse> => {
-  try {
-    const { data } = await apiClient.post('/signup', {
-      empCode: empCode.trim(),
-      username: username.trim(),
-      email: email.toLowerCase().trim(),
-      password
-    });
-
-    console.log('Signup response:', data);
-
-    return {
-      success: data.success,
-      empCode: data.empCode,
-      username: data.username,
-      token: data.token,
-      user: data.user,
-      message: data.message
-    };
-  } catch (error: any) {
-    console.error('Signup error:', error);
-    
-    if (error.response?.status === 409) {
-      return {
-        success: false,
-        error: "User already exists with this email, employee code, or username"
-      };
-    }
-    
-    return {
-      success: false,
-      error: error.response?.data?.error || error.message || "Signup failed"
-    };
-  }
-};
-
 export const loginUser = async (
   username: string, 
   password: string
@@ -83,24 +31,22 @@ export const loginUser = async (
       password
     });
 
-    console.log('Login response:', data);
-
     return {
       success: data.success,
-      empCode: data.empCode,
+      employeeNumber: data.employeeNumber,
       username: data.username,
+      empClass: data.empClass,
+      projects: data.projects,
       token: data.token,
-      user: data.user,
       message: data.message
     };
   } catch (error: any) {
     console.error('Login error:', error);
     
     if (error.response?.status === 401) {
-      const errorMessage = error.response.data?.error || "Invalid username or password";
       return {
         success: false,
-        error: errorMessage
+        error: error.response.data?.error || "Invalid username or password"
       };
     }
     

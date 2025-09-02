@@ -1,11 +1,9 @@
-// hooks/useProfile.ts
-
 import {
   AvatarData,
   getUserAvatar,
   saveUserAvatar,
 } from "@/services/avatarStorageService";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import {
   ProfileData as BaseProfileData,
@@ -20,29 +18,22 @@ export type ProfileDataWithAvatar = BaseProfileData & {
 };
 
 export const useProfile = () => {
-  const { userName, userId } = useAuthStore();
+  const { userName } = useAuthStore();
   const [profile, setProfile] = useState<ProfileDataWithAvatar | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  useEffect(() => {
-    if (userName) {
-      fetchProfile();
-    }
-  }, [userName]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!userName) return;
 
     try {
       setLoading(true);
 
-
       const response = await getUserProfileByUsername(userName);
 
       if (response.success && response.data) {
-        // Load avatar from local storage
-        const avatar = await getUserAvatar(response.data.empCode);
+        // Load avatar from local storage using employeeNumber
+        const avatar = await getUserAvatar(response.data.employeeNumber);
         setProfile({
           ...response.data,
           avatar,
@@ -56,14 +47,20 @@ export const useProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userName]);
+
+  useEffect(() => {
+    if (userName) {
+      fetchProfile();
+    }
+  }, [userName, fetchProfile]);
 
   const updateLocation = async (newLocation: string) => {
-    if (!profile?.empCode) return false;
+    if (!profile?.employeeNumber) return false;
 
     try {
       setUpdating(true);
-      const response = await updateUserLocation(profile.empCode, newLocation);
+      const response = await updateUserLocation(profile.employeeNumber, newLocation);
 
       if (response.success && response.data) {
         setProfile({
@@ -86,11 +83,11 @@ export const useProfile = () => {
   };
 
   const updateAvatar = async (avatarData: AvatarData) => {
-    if (!profile?.empCode) return false;
+    if (!profile?.employeeNumber) return false;
 
     try {
       setUpdating(true);
-      const success = await saveUserAvatar(profile.empCode, avatarData);
+      const success = await saveUserAvatar(profile.employeeNumber, avatarData);
 
       if (success) {
         setProfile((prev) => (prev ? { ...prev, avatar: avatarData } : null));
@@ -117,6 +114,5 @@ export const useProfile = () => {
     updateLocation,
     updateAvatar,
     userName,
-    userId,
   };
 };

@@ -1,13 +1,10 @@
-// services/UserId.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "app_user_data";
 
 export interface UserData {
-  userId: string;  // This is empCode
-  userKey?: string;  // The actual primary key from database
-  name: string;  // username
-  email: string;
+  employeeNumber: string;
+  name: string;
   isLoggedIn: boolean;
   hasAcceptedTerms?: boolean;
 }
@@ -16,7 +13,6 @@ const getOrCreateUserId = async () => {
   const userData = await getUserData();
   
   if (userData && userData.isLoggedIn) {
-    // Return the username for attendance marking
     return userData.name;
   }
   

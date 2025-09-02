@@ -2,7 +2,6 @@ import { colors } from "@/constants/colors";
 import { useAuthStore } from "@/store/authStore";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { LinearGradient } from "expo-linear-gradient";
-import { Link } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
@@ -25,22 +24,13 @@ export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert("Error", "Please enter email and password");
+      Alert.alert("Error", "Please enter username and password");
       return;
     }
-    await signIn(username.trim().toLowerCase(), password);
-  };
-
-  const handleSocialLogin = (provider: string) => {
-    Alert.alert("Coming Soon", `${provider} login will be available soon!`);
-  };
-
-  const handleForgotPassword = () => {
-    Alert.alert("Password Reset", "Password reset functionality coming soon!");
+    await signIn(username.trim(), password);
   };
 
   return (
@@ -68,7 +58,8 @@ export default function LoginScreen() {
                 color={colors.primary[500]}
               />
             </View>
-            <Text style={styles.brandName}>Attendance</Text>
+            <Text style={styles.brandName}>Attendance System</Text>
+            <Text style={styles.tagline}>IIT Guwahati</Text>
           </Animated.View>
 
           {/* Login Form Card */}
@@ -89,7 +80,7 @@ export default function LoginScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Username or Email"
+                placeholder="Username"
                 placeholderTextColor={colors.gray[400]}
                 value={username}
                 onChangeText={setUsername}
@@ -144,18 +135,6 @@ export default function LoginScreen() {
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
-
-            {/* Sign Up Link */}
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>
-                Don&apos;t have an account?{" "}
-              </Text>
-              <Link href="/(auth)/signup" asChild>
-                <TouchableOpacity>
-                  <Text style={styles.signupLink}>Sign Up</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>

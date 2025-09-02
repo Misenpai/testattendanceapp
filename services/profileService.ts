@@ -4,12 +4,10 @@ import axios from "axios";
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE;
 
 export interface ProfileData {
-  empCode: string;
+  employeeNumber: string;
   username: string;
-  email: string;
-  location: string;
-  createdAt: string;
-  updatedAt: string;
+  empClass: string;
+  dateOfResign?: string | null;
 }
 
 export interface ProfileResponse {
@@ -43,10 +41,7 @@ export const getUserProfileByUsername = async (username: string): Promise<Profil
     
     return {
       success: data.success,
-      data: {
-        ...data.data,
-        empId: data.data.empCode,  // Map empCode to empId for backward compatibility
-      }
+      data: data.data
     };
   } catch (error: any) {
     console.error('Get profile error:', error);
@@ -68,21 +63,18 @@ export const getUserProfileByUsername = async (username: string): Promise<Profil
   }
 };
 
-export const updateUserLocation = async (empId: string, location: string): Promise<ProfileResponse> => {
+export const updateUserLocation = async (employeeNumber: string, location: string): Promise<ProfileResponse> => {
   try {
-    console.log('Updating location for empId:', empId, 'to:', location);
+    console.log('Updating location for employeeNumber:', employeeNumber, 'to:', location);
     
     const apiClient = createApiClient();
-    const { data } = await apiClient.patch(`/profile/${empId}/location`, { location });
+    const { data } = await apiClient.patch(`/profile/${employeeNumber}/location`, { location });
     
     console.log('Update location response:', data);
     
     return {
       success: data.success,
-      data: {
-        ...data.data,
-        empId: data.data.empCode,  // Map for backward compatibility
-      },
+      data: data.data,
       message: data.message
     };
   } catch (error: any) {

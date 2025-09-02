@@ -1,36 +1,20 @@
-// component/profile/ProfileContainer.tsx
 import { colors } from '@/constants/colors';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useProfile } from '../../hooks/useProfile';
+import { useAuthStore } from '../../store/authStore';
 import { AttendanceCalendar } from './AttendanceCalendar';
 import { AvatarDisplay } from './AvatarDisplay';
 import { AvatarPicker } from './AvatarPicker';
-import { LocationDropdown } from './LocationDropdown';
 import { LogoutButton } from './LogoutButton';
 import { ProfileField } from './ProfileFieldProfile';
 
 export const ProfileContainer: React.FC = () => {
-  const { profile, updating, updateLocation, updateAvatar } = useProfile();
-  const [selectedLocation, setSelectedLocation] = useState(profile?.location || 'all');
+  const { profile, updating, updateAvatar } = useProfile();
+  const { projects } = useAuthStore();
   const [showCalendar, setShowCalendar] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-
-  React.useEffect(() => {
-    if (profile?.location) {
-      setSelectedLocation(profile.location);
-    }
-  }, [profile?.location]);
-
-  const handleLocationChange = async (newLocation: string) => {
-    const success = await updateLocation(newLocation);
-    if (!success) {
-      setSelectedLocation(profile?.location || 'all');
-    } else {
-      setSelectedLocation(newLocation);
-    }
-  };
 
   const handleAvatarSelect = async (avatarData: {
     style: string;
@@ -43,6 +27,9 @@ export const ProfileContainer: React.FC = () => {
   if (!profile) {
     return null;
   }
+
+  // Get department from projects
+  const department = projects.length > 0 ? projects[0].department : 'Not Assigned';
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -63,7 +50,6 @@ export const ProfileContainer: React.FC = () => {
                 </Text>
               </View>
             )}
-            {/* Edit overlay */}
             <View style={styles.editOverlay}>
               <FontAwesome6 name="camera" size={16} color="white" />
             </View>
@@ -74,7 +60,7 @@ export const ProfileContainer: React.FC = () => {
           </View>
         </View>
 
-        {/* Quick Stats Card */}
+        {/* Attendance Calendar Toggle */}
         <TouchableOpacity 
           style={styles.attendanceCard}
           onPress={() => setShowCalendar(!showCalendar)}
@@ -101,7 +87,7 @@ export const ProfileContainer: React.FC = () => {
         {/* Attendance Calendar Section */}
         {showCalendar && (
           <View style={styles.calendarSection}>
-            <AttendanceCalendar empId={profile.empCode} />
+            <AttendanceCalendar employeeCode={profile.employeeNumber} />
           </View>
         )}
 
@@ -117,28 +103,38 @@ export const ProfileContainer: React.FC = () => {
           />
           
           <ProfileField 
-            label="Email" 
-            value={profile.email} 
-            isReadOnly 
-            icon="envelope"
-          />
-          
-          <ProfileField 
-            label="Employee ID" 
-            value={profile.empCode} 
+            label="Employee Number" 
+            value={profile.employeeNumber} 
             isReadOnly 
             icon="id-card"
           />
-        </View>
 
-        {/* Location Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Department Settings</Text>
-          <LocationDropdown
-            selectedLocation={selectedLocation}
-            onLocationChange={handleLocationChange}
-            updating={updating}
+          <ProfileField 
+            label="Employee Class" 
+            value={profile.empClass || 'PJ'} 
+            isReadOnly 
+            icon="briefcase"
           />
+
+          <ProfileField 
+            label="Department" 
+            value={department} 
+            isReadOnly 
+            icon="building"
+          />
+
+          {/* Show Projects */}
+          {projects.length > 0 && (
+            <View style={styles.projectsSection}>
+              <Text style={styles.projectsLabel}>PROJECTS</Text>
+              {projects.map((project, index) => (
+                <View key={index} style={styles.projectItem}>
+                  <FontAwesome6 name="folder" size={14} color={colors.gray[500]} />
+                  <Text style={styles.projectText}>{project.projectCode}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
         
         <LogoutButton disabled={updating} />
@@ -278,5 +274,32 @@ const styles = StyleSheet.create({
   text: {
     marginTop: 20,
     alignItems: 'center',
+  },
+  projectsSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
+  },
+  projectsLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  projectItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: colors.gray[50],
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  projectText: {
+    fontSize: 14,
+    color: colors.gray[700],
   },
 });

@@ -4,7 +4,9 @@ import {
   AttendanceDate,
   AttendanceStatistics,
   getAttendanceCalendar,
+  getCachedHolidays,
   getMarkedDates,
+  Holiday,
 } from "@/services/attendanceCalendarService";
 import { useAttendanceStore } from "@/store/attendanceStore";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
@@ -23,50 +25,82 @@ import {
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
-
 interface AttendanceCalendarProps {
-  empId: string;
+  employeeCode: string;
 }
-
 export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
-  empId,
+  employeeCode,
 }) => {
   const [loading, setLoading] = useState(true);
   const [attendanceDates, setAttendanceDates] = useState<AttendanceDate[]>([]);
   const [statistics, setStatistics] = useState<AttendanceStatistics | null>(
-    null,
+    null
   );
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [markedDates, setMarkedDates] = useState<any>({});
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [isChangingMonth, setIsChangingMonth] = useState(false);
-
   const attendanceRecords = useAttendanceStore(
-    (state) => state.attendanceRecords,
+    (state) => state.attendanceRecords
   );
   const todayAttendanceMarked = useAttendanceStore(
-    (state) => state.todayAttendanceMarked,
+    (state) => state.todayAttendanceMarked
   );
-  const { fieldTripDates, userLocationType } = useAttendanceStore();
-
+  const { fieldTripDates } = useAttendanceStore();
+  // Load holidays using the /api/calendar endpoint
+  useEffect(() => {
+    const loadHolidays = async () => {
+      try {
+        const cachedHolidays = await getCachedHolidays(
+          selectedYear,
+          selectedMonth
+        );
+        setHolidays(cachedHolidays);
+      } catch (error) {
+        console.error("Error loading holidays:", error);
+        setHolidays([]);
+      }
+    };
+    loadHolidays();
+  }, [selectedYear, selectedMonth]);
   const fetchAttendanceData = useCallback(
     async (showLoading = true) => {
       try {
         if (showLoading && !isChangingMonth) setLoading(true);
         const response = await getAttendanceCalendar(
-          empId,
+          employeeCode,
           selectedYear,
-          selectedMonth,
+          selectedMonth
         );
         if (response.success && response.data) {
-          setAttendanceDates(response.data.dates);
+          // Map backend 'attendances' to frontend 'AttendanceDate' structure
+          const mappedDates: AttendanceDate[] = response.data.attendances.map(
+            (a: any) => ({
+              date: a.attendanceCalendar.day.split("T")[0],
+              present: a.attendanceCalendar.present,
+              absent: a.attendanceCalendar.absent,
+              attendance: {
+                takenLocation: a.attendanceType.takenLocation || null,
+                checkinTime: a.attendanceType.checkinTime || null,
+                checkoutTime: a.attendanceType.checkoutTime || null,
+                sessionType: a.attendanceType.attendanceGivenTime,
+                fullDay: a.attendanceType.fullDay,
+                halfDay: a.attendanceType.halfDay,
+                isCheckout: a.attendanceType.isCheckout,
+              },
+            })
+          );
+          setAttendanceDates(mappedDates);
           setStatistics(response.data.statistics);
-          setMarkedDates(getMarkedDates(response.data.dates));
+          // Get marked dates with holidays
+          const marked = getMarkedDates(mappedDates, holidays);
+          setMarkedDates(marked);
         } else if (!isChangingMonth) {
           Alert.alert(
             "Error",
-            response.error || "Failed to load attendance data",
+            response.error || "Failed to load attendance data"
           );
         }
       } catch (error) {
@@ -79,21 +113,20 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         setIsChangingMonth(false);
       }
     },
-    [empId, selectedYear, selectedMonth, isChangingMonth],
+    [employeeCode, selectedYear, selectedMonth, holidays, isChangingMonth]
   );
-
   useEffect(() => {
-    fetchAttendanceData();
-  }, [fetchAttendanceData]);
-
+    if (holidays.length > 0) {
+      fetchAttendanceData();
+    }
+  }, [fetchAttendanceData, holidays]);
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     const currentMonth = new Date().getMonth() + 1;
     const currentYear = new Date().getFullYear();
-
     if (selectedMonth === currentMonth && selectedYear === currentYear) {
       const todayRecord = attendanceRecords.find(
-        (record) => record.date === today,
+        (record) => record.date === today
       );
       if (todayRecord || todayAttendanceMarked) {
         const timeoutId = setTimeout(() => {
@@ -109,46 +142,38 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     selectedYear,
     fetchAttendanceData,
   ]);
-
   useFocusEffect(
     useCallback(() => {
-      fetchAttendanceData(false);
-    }, [fetchAttendanceData]),
+      if (holidays.length > 0) {
+        fetchAttendanceData(false);
+      }
+    }, [fetchAttendanceData, holidays])
   );
-
+  const isFieldTrip = useMemo(() => {
+    if (!selectedDate || !fieldTripDates || !Array.isArray(fieldTripDates))
+      return false;
+    return fieldTripDates.some((trip) => {
+      const start = new Date(trip.startDate);
+      const end = new Date(trip.endDate);
+      const checkDate = new Date(selectedDate);
+      return checkDate >= start && checkDate <= end;
+    });
+  }, [selectedDate, fieldTripDates]);
   const handleRefresh = useCallback(() => {
     fetchAttendanceData(true);
   }, [fetchAttendanceData]);
-
   const onDayPress = useCallback((day: any) => {
     setSelectedDate(day.dateString);
   }, []);
-
   const onMonthChange = useCallback((month: any) => {
     setIsChangingMonth(true);
     setSelectedMonth(month.month);
     setSelectedYear(month.year);
   }, []);
-
-  const isFieldTripDate = useCallback(
-    (dateStr: string) => {
-      return fieldTripDates.some((trip) => {
-        const start = new Date(trip.startDate);
-        const end = new Date(trip.endDate);
-        const checkDate = new Date(dateStr);
-        return checkDate >= start && checkDate <= end;
-      });
-    },
-    [fieldTripDates],
-  );
-
   const renderSelectedDateInfo = () => {
     if (!selectedDate) return null;
-
-    const attendance = attendanceDates.find(
-      (a) => a.date.split("T")[0] === selectedDate,
-    );
-    const isFieldTrip = isFieldTripDate(selectedDate);
+    const attendance = attendanceDates.find((a) => a.date === selectedDate);
+    const holiday = holidays.find((h) => h.date === selectedDate);
 
     if (!attendance) {
       return (
@@ -164,7 +189,20 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
               day: "numeric",
             })}
           </Text>
-          {isFieldTrip ? (
+
+          {holiday ? (
+            <View style={styles.holidayContainer}>
+              <FontAwesome6
+                name={holiday.isWeekend ? "calendar-week" : "calendar-xmark"}
+                size={32}
+                color={colors.warning}
+              />
+              <Text style={styles.holidayText}>{holiday.description}</Text>
+              <Text style={styles.holidaySubText}>
+                {holiday.isWeekend ? "Weekend" : "Holiday"}
+              </Text>
+            </View>
+          ) : isFieldTrip ? (
             <View style={styles.fieldTripNoAttendanceContainer}>
               <FontAwesome6 name="route" size={32} color={colors.warning} />
               <Text style={styles.fieldTripNoAttendanceText}>
@@ -189,7 +227,25 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     }
 
     const getAttendanceStatus = () => {
-      if (!attendance.attendance.isCheckedOut) {
+      if (attendance.present === 0) {
+        return {
+          label: "Absent",
+          color: colors.error,
+          icon: "calendar-xmark",
+          backgroundColor: colors.error + "20",
+        };
+      }
+
+      if (!attendance.attendance) {
+        return {
+          label: "Present",
+          color: colors.success,
+          icon: "check",
+          backgroundColor: colors.success + "20",
+        };
+      }
+
+      if (!attendance.attendance.isCheckout) {
         return {
           label: "In Progress",
           color: colors.warning,
@@ -197,7 +253,8 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
           backgroundColor: colors.warning + "20",
         };
       }
-      if (attendance.attendance.attendanceType === "FULL_DAY") {
+
+      if (attendance.attendance.fullDay) {
         return {
           label: "Full Day",
           color: colors.success,
@@ -205,11 +262,21 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
           backgroundColor: colors.success + "20",
         };
       }
+
+      if (attendance.attendance.halfDay) {
+        return {
+          label: "Half Day",
+          color: colors.info,
+          icon: "circle-half-stroke",
+          backgroundColor: colors.info + "20",
+        };
+      }
+
       return {
-        label: "Half Day",
-        color: colors.info,
-        icon: "circle-half-stroke",
-        backgroundColor: colors.info + "20",
+        label: "Present",
+        color: colors.success,
+        icon: "check",
+        backgroundColor: colors.success + "20",
       };
     };
 
@@ -221,7 +288,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         style={styles.selectedDateCard}
       >
         <Text style={styles.selectedDateTitle}>
-          {new Date(attendance.date).toLocaleDateString("en-US", {
+          {new Date(selectedDate).toLocaleDateString("en-US", {
             weekday: "long",
             year: "numeric",
             month: "long",
@@ -258,88 +325,116 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
               </Text>
             </View>
           )}
-        </View>
 
-        <View style={styles.attendanceDetailsContainer}>
-          {attendance.attendance.sessionType && (
-            <View style={styles.attendanceDetailRow}>
+          {holiday && (
+            <View
+              style={[
+                styles.holidayBadge,
+                {
+                  backgroundColor: holiday.isWeekend ? "#E0E7FF" : "#FEF3C7",
+                  borderColor: holiday.isWeekend ? "#6366F1" : "#F59E0B",
+                },
+              ]}
+            >
               <FontAwesome6
-                name="business-time"
+                name={holiday.isWeekend ? "calendar-week" : "calendar-xmark"}
                 size={16}
-                color={colors.primary[500]}
+                color={holiday.isWeekend ? "#6366F1" : "#F59E0B"}
               />
-              <Text style={styles.attendanceDetailLabel}>Session:</Text>
-              <Text style={styles.attendanceDetailValue}>
-                {attendance.attendance.sessionType}
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.attendanceDetailRow}>
-            <FontAwesome6
-              name="location-dot"
-              size={16}
-              color={colors.primary[500]}
-            />
-            <Text style={styles.attendanceDetailLabel}>Location:</Text>
-            <Text style={styles.attendanceDetailValue}>
-              {attendance.attendance.takenLocation || "Not specified"}
-            </Text>
-          </View>
-
-          <View style={styles.attendanceDetailRow}>
-            <FontAwesome6
-              name="right-to-bracket"
-              size={16}
-              color={colors.primary[500]}
-            />
-            <Text style={styles.attendanceDetailLabel}>Check-in:</Text>
-            <Text style={styles.attendanceDetailValue}>
-              {new Date(attendance.attendance.checkInTime).toLocaleTimeString()}
-            </Text>
-          </View>
-
-          {attendance.attendance.checkOutTime && (
-            <View style={styles.attendanceDetailRow}>
-              <FontAwesome6
-                name="right-from-bracket"
-                size={16}
-                color={colors.primary[500]}
-              />
-              <Text style={styles.attendanceDetailLabel}>Check-out:</Text>
-              <Text style={styles.attendanceDetailValue}>
-                {new Date(
-                  attendance.attendance.checkOutTime,
-                ).toLocaleTimeString()}
-              </Text>
-            </View>
-          )}
-
-          {isFieldTrip && (
-            <View style={styles.attendanceDetailRow}>
-              <FontAwesome6
-                name="info-circle"
-                size={16}
-                color={colors.info}
-              />
-              <Text style={styles.attendanceDetailLabel}>Note:</Text>
-              <Text style={styles.attendanceDetailValue}>
-                Attendance marked during field trip
+              <Text
+                style={[
+                  styles.holidayBadgeText,
+                  { color: holiday.isWeekend ? "#6366F1" : "#F59E0B" },
+                ]}
+              >
+                {holiday.description}
               </Text>
             </View>
           )}
         </View>
+
+        {attendance.attendance && (
+          <View style={styles.attendanceDetailsContainer}>
+            {attendance.attendance.sessionType && (
+              <View style={styles.attendanceDetailRow}>
+                <FontAwesome6
+                  name="business-time"
+                  size={16}
+                  color={colors.primary[500]}
+                />
+                <Text style={styles.attendanceDetailLabel}>Session:</Text>
+                <Text style={styles.attendanceDetailValue}>
+                  {attendance.attendance.sessionType === "FN"
+                    ? "Forenoon"
+                    : "Afternoon"}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.attendanceDetailRow}>
+              <FontAwesome6
+                name="location-dot"
+                size={16}
+                color={colors.primary[500]}
+              />
+              <Text style={styles.attendanceDetailLabel}>Location:</Text>
+              <Text style={styles.attendanceDetailValue}>
+                {attendance.attendance.takenLocation || "Not specified"}
+              </Text>
+            </View>
+
+            {attendance.attendance.checkinTime && (
+              <View style={styles.attendanceDetailRow}>
+                <FontAwesome6
+                  name="right-to-bracket"
+                  size={16}
+                  color={colors.primary[500]}
+                />
+                <Text style={styles.attendanceDetailLabel}>Check-in:</Text>
+                <Text style={styles.attendanceDetailValue}>
+                  {new Date(
+                    attendance.attendance.checkinTime
+                  ).toLocaleTimeString()}
+                </Text>
+              </View>
+            )}
+
+            {attendance.attendance.checkoutTime && (
+              <View style={styles.attendanceDetailRow}>
+                <FontAwesome6
+                  name="right-from-bracket"
+                  size={16}
+                  color={colors.primary[500]}
+                />
+                <Text style={styles.attendanceDetailLabel}>Check-out:</Text>
+                <Text style={styles.attendanceDetailValue}>
+                  {new Date(
+                    attendance.attendance.checkoutTime
+                  ).toLocaleTimeString()}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </Animated.View>
     );
   };
-
   const enhancedMarkedDates = useMemo(() => {
     const marked = { ...markedDates };
-
-    if (fieldTripDates.length > 0) {
+    // Handle field trip dates - add proper null/undefined checks
+    if (
+      fieldTripDates &&
+      Array.isArray(fieldTripDates) &&
+      fieldTripDates.length > 0
+    ) {
       fieldTripDates.forEach((trip) => {
+        if (!trip || !trip.startDate || !trip.endDate) return;
+
         const start = new Date(trip.startDate);
         const end = new Date(trip.endDate);
+
+        // Validate dates
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
           const dateStr = d.toISOString().split("T")[0];
@@ -386,7 +481,6 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
     return marked;
   }, [markedDates, fieldTripDates, selectedDate]);
-
   const calendarTheme = useMemo(
     () => ({
       backgroundColor: colors.white,
@@ -409,12 +503,10 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       textMonthFontSize: 18,
       textDayHeaderFontSize: 14,
     }),
-    [],
+    []
   );
-
   const renderStatisticsCard = () => {
     if (!statistics) return null;
-
     return (
       <Animated.View
         entering={FadeInDown.delay(100).springify()}
@@ -484,21 +576,10 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
               <Text style={styles.statLabel}>Half Days</Text>
             </View>
           </View>
-
-          {statistics.lastAttendance && (
-            <View style={styles.lastAttendanceContainer}>
-              <FontAwesome6 name="clock" size={14} color={colors.gray[200]} />
-              <Text style={styles.lastAttendanceText}>
-                Last attendance:{" "}
-                {new Date(statistics.lastAttendance).toLocaleDateString()}
-              </Text>
-            </View>
-          )}
         </LinearGradient>
       </Animated.View>
     );
   };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -507,7 +588,6 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       </View>
     );
   }
-
   return (
     <ScrollView
       style={styles.container}
@@ -522,12 +602,14 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       }
     >
       {renderStatisticsCard()}
-
       <View style={styles.calendarCard}>
         <Text style={styles.calendarTitle}>Attendance Calendar</Text>
 
         <Calendar
-          current={`${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`}
+          current={`${selectedYear}-${String(selectedMonth).padStart(
+            2,
+            "0"
+          )}-01`}
           onDayPress={onDayPress}
           onMonthChange={onMonthChange}
           markingType="custom"
@@ -564,48 +646,44 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
             />
             <Text style={styles.legendText}>In Progress</Text>
           </View>
-          {fieldTripDates.length > 0 && (
-            <>
-              <View style={styles.legendItem}>
-                <View
-                  style={[
-                    styles.legendDot,
-                    {
-                      backgroundColor: "#F59E0B",
-                      borderWidth: 2,
-                      borderColor: "#92400E",
-                    },
-                  ]}
-                />
-                <Text style={styles.legendText}>Field Trip + Attendance</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View
-                  style={[
-                    styles.legendDot,
-                    {
-                      backgroundColor: "#FEF3C7",
-                      borderWidth: 1,
-                      borderColor: "#F59E0B",
-                    },
-                  ]}
-                />
-                <Text style={styles.legendText}>Field Trip (No Attendance)</Text>
-              </View>
-            </>
-          )}
           <View style={styles.legendItem}>
             <View
-              style={[styles.legendDot, { backgroundColor: colors.gray[300] }]}
+              style={[styles.legendDot, { backgroundColor: colors.error }]}
             />
             <Text style={styles.legendText}>Absent</Text>
           </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: "#E0E7FF" }]} />
+            <Text style={styles.legendText}>Weekend</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: "#FEF3C7" }]} />
+            <Text style={styles.legendText}>Holiday</Text>
+          </View>
+          {fieldTripDates &&
+            Array.isArray(fieldTripDates) &&
+            fieldTripDates.length > 0 && (
+              <>
+                <View style={styles.legendItem}>
+                  <View
+                    style={[
+                      styles.legendDot,
+                      {
+                        backgroundColor: "#FEF3C7",
+                        borderWidth: 2,
+                        borderColor: "#F59E0B",
+                      },
+                    ]}
+                  />
+                  <Text style={styles.legendText}>Field Trip</Text>
+                </View>
+              </>
+            )}
         </View>
       </View>
     </ScrollView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -812,7 +890,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.gray[600],
   },
-
   badgeContainer: {
     flexDirection: "row",
     gap: 8,
@@ -832,6 +909,40 @@ const styles = StyleSheet.create({
   fieldTripBadgeText: {
     fontSize: 12,
     fontWeight: "600",
+  },
+  holidayBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignSelf: "flex-start",
+  },
+  holidayBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  holidayContainer: {
+    alignItems: "center",
+    paddingVertical: 20,
+    backgroundColor: "#FEF3C7",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#F59E0B",
+  },
+  holidayText: {
+    fontSize: 16,
+    color: "#92400E",
+    fontWeight: "600",
+    marginTop: 12,
+  },
+  holidaySubText: {
+    fontSize: 14,
+    color: "#A16207",
+    marginTop: 4,
+    textAlign: "center",
   },
   fieldTripNoAttendanceContainer: {
     alignItems: "center",

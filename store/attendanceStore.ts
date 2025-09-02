@@ -45,9 +45,12 @@ interface AttendanceState {
   isFieldTrip: boolean;
   fieldTripDates: { startDate: string; endDate: string }[];
 
-  // NEW: Session & checkout
+  // Session & checkout
   currentSessionType: "FORENOON" | "AFTERNOON" | null;
   canCheckout: boolean;
+
+  // NEW: department
+  department: string | null;
 
   // Actions
   initializeUserId: () => Promise<void>;
@@ -69,14 +72,17 @@ interface AttendanceState {
   triggerAttendanceUpdate: () => void;
   refreshAttendanceData: () => Promise<void>;
   setUserLocationType: (
-    type: "ABSOLUTE" | "APPROX" | "FIELDTRIP" | null,
+    type: "ABSOLUTE" | "APPROX" | "FIELDTRIP" | null
   ) => void;
   checkFieldTripStatus: () => Promise<void>;
   fetchUserLocationSettings: () => Promise<void>;
 
-  // NEW: Checkout & session helpers
+  // Checkout & session helpers
   checkoutAttendance: () => Promise<boolean>;
   getCurrentSessionType: () => "FORENOON" | "AFTERNOON" | "OUTSIDE";
+
+  // NEW: department setter
+  setDepartment: (department: string) => void;
 }
 
 const getTodayDateString = () => new Date().toISOString().split("T")[0];
@@ -111,9 +117,12 @@ export const useAttendanceStore = create<AttendanceState>()(
       isFieldTrip: false,
       fieldTripDates: [],
 
-      // NEW: Session & checkout
+      // Session & checkout
       currentSessionType: null,
       canCheckout: false,
+
+      // NEW
+      department: null,
 
       // Actions
       initializeUserId: async () => {
@@ -188,6 +197,7 @@ export const useAttendanceStore = create<AttendanceState>()(
           fieldTripDates: [],
           currentSessionType: null,
           canCheckout: false,
+          department: null, // NEW
         });
       },
 
@@ -244,7 +254,7 @@ export const useAttendanceStore = create<AttendanceState>()(
       fetchTodayAttendanceFromServer: async () => {
         const state = get();
         if (!state.userId) return false;
-        
+
         try {
           // Import auth store to get headers
           const { useAuthStore } = await import("./authStore");
@@ -252,15 +262,15 @@ export const useAttendanceStore = create<AttendanceState>()(
 
           const res = await fetch(
             `${process.env.EXPO_PUBLIC_API_BASE}/attendance/today/${state.userId}`,
-            { 
+            {
               cache: "no-cache",
               headers: {
-                'Content-Type': 'application/json',
-                ...authHeaders
-              }
-            },
+                "Content-Type": "application/json",
+                ...authHeaders,
+              },
+            }
           );
-          
+
           const data = await res.json();
           const today = getTodayDateString();
 
@@ -295,7 +305,7 @@ export const useAttendanceStore = create<AttendanceState>()(
           } else {
             set({
               attendanceRecords: state.attendanceRecords.filter(
-                (r) => r.date !== today,
+                (r) => r.date !== today
               ),
               todayAttendanceMarked: false,
               lastAttendanceUpdate: Date.now(),
@@ -364,9 +374,9 @@ export const useAttendanceStore = create<AttendanceState>()(
           const { useAuthStore } = await import("./authStore");
           const authHeaders = useAuthStore.getState().getAuthHeaders();
 
-          // Use username endpoint instead of empId
+          // Use username endpoint instead of employeeCode
           const res = await fetch(
-            `${process.env.EXPO_PUBLIC_API_BASE}/user-location/username/${state.userId}`,
+            `${process.env.EXPO_PUBLIC_API_BASE}/user-field-trips/username/${state.userId}`,
             {
               method: "GET",
               headers: {
@@ -374,7 +384,7 @@ export const useAttendanceStore = create<AttendanceState>()(
                 ...authHeaders,
               },
               cache: "no-cache",
-            },
+            }
           );
 
           const data = await res.json();
@@ -447,7 +457,7 @@ export const useAttendanceStore = create<AttendanceState>()(
           const authHeaders = useAuthStore.getState().getAuthHeaders();
 
           const res = await fetch(
-            `${process.env.EXPO_PUBLIC_API_BASE}/user-location/username/${state.userId}`,
+            `${process.env.EXPO_PUBLIC_API_BASE}/user-field-trips/username/${state.userId}`,
             {
               method: "GET",
               headers: {
@@ -455,7 +465,7 @@ export const useAttendanceStore = create<AttendanceState>()(
                 ...authHeaders,
               },
               cache: "no-cache",
-            },
+            }
           );
 
           const data = await res.json();
@@ -476,7 +486,7 @@ export const useAttendanceStore = create<AttendanceState>()(
               // Store this as the default location type
               await AsyncStorage.setItem(
                 "defaultLocationType",
-                locationData.locationType,
+                locationData.locationType
               );
             } else {
               // Retrieve the stored default location type
@@ -519,7 +529,7 @@ export const useAttendanceStore = create<AttendanceState>()(
         }
       },
 
-      // NEW: Checkout & session helpers
+      // Checkout & session helpers
       getCurrentSessionType: () => {
         const now = new Date();
         const hours = now.getHours();
@@ -558,6 +568,9 @@ export const useAttendanceStore = create<AttendanceState>()(
           return false;
         }
       },
+
+      // NEW
+      setDepartment: (department) => set({ department }),
     }),
     {
       name: "attendance-storage",
@@ -565,15 +578,15 @@ export const useAttendanceStore = create<AttendanceState>()(
       partialize: (state) => ({
         attendanceRecords: state.attendanceRecords,
         lastAttendanceUpdate: state.lastAttendanceUpdate,
-        userLocationType: state.userLocationType, // Persist location type
-        fieldTripDates: state.fieldTripDates, // Always persist field trip dates
+        userLocationType: state.userLocationType,
+        fieldTripDates: state.fieldTripDates,
         currentSessionType: state.currentSessionType,
         canCheckout: state.canCheckout,
+        department: state.department, // NEW
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.lastAttendanceUpdate = Date.now();
-          // Re-fetch location settings on app startup to ensure consistency
           if (state.userId) {
             setTimeout(() => {
               state.fetchUserLocationSettings();
@@ -581,6 +594,6 @@ export const useAttendanceStore = create<AttendanceState>()(
           }
         }
       },
-    },
-  ),
+    }
+  )
 );
