@@ -104,7 +104,8 @@ export const getMarkedDates = (
   holidays: Holiday[]
 ) => {
   const marked: { [key: string]: any } = {};
-  // 1. Attendance entries
+  
+  // 1. Attendance entries - simplified color scheme
   attendanceDates.forEach((item) => {
     const dateStr = item.date.split('T')[0];
     let dotColor = '#9CA3AF'; // Gray for absent
@@ -114,17 +115,15 @@ export const getMarkedDates = (
     if (item.present === 1) {
       if (item.attendance) {
         if (!item.attendance.isCheckout) {
+          // In Progress (not checked out)
           dotColor = '#F59E0B'; // Warning
           backgroundColor = '#FEF3C7';
           textColor = '#92400E';
-        } else if (item.attendance.fullDay) {
+        } else {
+          // Present (checked out - regardless of full/half day)
           dotColor = '#10B981'; // Success
           backgroundColor = '#D1FAE5';
           textColor = '#065F46';
-        } else if (item.attendance.halfDay) {
-          dotColor = '#3B82F6'; // Info
-          backgroundColor = '#DBEAFE';
-          textColor = '#1E40AF';
         }
       }
     }
@@ -146,6 +145,7 @@ export const getMarkedDates = (
       },
     };
   });
+  
   // 2. Holidays & weekends
   holidays.forEach((h) => {
     const dateStr = h.date.split('T')[0] || h.date;
@@ -153,16 +153,17 @@ export const getMarkedDates = (
       marked[dateStr] = {
         customStyles: {
           container: {
-            backgroundColor: h.isWeekend ? '#FEE2E2' : '#FEF3C7',
+            backgroundColor: h.isWeekend ? '#E0E7FF' : '#FEF3C7',
             borderRadius: 6,
           },
           text: {
-            color: h.isWeekend ? '#991B1B' : '#92400E',
+            color: h.isWeekend ? '#6366F1' : '#92400E',
             fontWeight: '500',
           },
         },
       };
     }
   });
+  
   return marked;
 };

@@ -11,7 +11,6 @@ import {
 import { useAttendanceStore } from "@/store/attendanceStore";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -25,9 +24,11 @@ import {
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+
 interface AttendanceCalendarProps {
   employeeCode: string;
 }
+
 export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   employeeCode,
 }) => {
@@ -49,6 +50,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     (state) => state.todayAttendanceMarked
   );
   const { fieldTripDates } = useAttendanceStore();
+
   // Load holidays using the /api/calendar endpoint
   useEffect(() => {
     const loadHolidays = async () => {
@@ -65,6 +67,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     };
     loadHolidays();
   }, [selectedYear, selectedMonth]);
+
   const fetchAttendanceData = useCallback(
     async (showLoading = true) => {
       try {
@@ -115,11 +118,13 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     },
     [employeeCode, selectedYear, selectedMonth, holidays, isChangingMonth]
   );
+
   useEffect(() => {
     if (holidays.length > 0) {
       fetchAttendanceData();
     }
   }, [fetchAttendanceData, holidays]);
+
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     const currentMonth = new Date().getMonth() + 1;
@@ -142,6 +147,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     selectedYear,
     fetchAttendanceData,
   ]);
+
   useFocusEffect(
     useCallback(() => {
       if (holidays.length > 0) {
@@ -149,6 +155,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       }
     }, [fetchAttendanceData, holidays])
   );
+
   const isFieldTrip = useMemo(() => {
     if (!selectedDate || !fieldTripDates || !Array.isArray(fieldTripDates))
       return false;
@@ -159,17 +166,21 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       return checkDate >= start && checkDate <= end;
     });
   }, [selectedDate, fieldTripDates]);
+
   const handleRefresh = useCallback(() => {
     fetchAttendanceData(true);
   }, [fetchAttendanceData]);
+
   const onDayPress = useCallback((day: any) => {
     setSelectedDate(day.dateString);
   }, []);
+
   const onMonthChange = useCallback((month: any) => {
     setIsChangingMonth(true);
     setSelectedMonth(month.month);
     setSelectedYear(month.year);
   }, []);
+
   const renderSelectedDateInfo = () => {
     if (!selectedDate) return null;
     const attendance = attendanceDates.find((a) => a.date === selectedDate);
@@ -254,28 +265,11 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         };
       }
 
-      if (attendance.attendance.fullDay) {
-        return {
-          label: "Full Day",
-          color: colors.success,
-          icon: "circle-check",
-          backgroundColor: colors.success + "20",
-        };
-      }
-
-      if (attendance.attendance.halfDay) {
-        return {
-          label: "Half Day",
-          color: colors.info,
-          icon: "circle-half-stroke",
-          backgroundColor: colors.info + "20",
-        };
-      }
-
+      // If checked out, just show as Present (details will show full/half day)
       return {
         label: "Present",
         color: colors.success,
-        icon: "check",
+        icon: "circle-check",
         backgroundColor: colors.success + "20",
       };
     };
@@ -353,8 +347,23 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
           )}
         </View>
 
-        {attendance.attendance && (
+        {attendance.attendance && attendance.present === 1 && (
           <View style={styles.attendanceDetailsContainer}>
+            {/* Show Full Day or Half Day status for present days */}
+            {attendance.attendance.isCheckout && (
+              <View style={styles.attendanceDetailRow}>
+                <FontAwesome6
+                  name="calendar-day"
+                  size={16}
+                  color={colors.primary[500]}
+                />
+                <Text style={styles.attendanceDetailLabel}>Day Type:</Text>
+                <Text style={styles.attendanceDetailValue}>
+                  {attendance.attendance.fullDay ? "Full Day" : "Half Day"}
+                </Text>
+              </View>
+            )}
+
             {attendance.attendance.sessionType && (
               <View style={styles.attendanceDetailRow}>
                 <FontAwesome6
@@ -419,6 +428,31 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       </Animated.View>
     );
   };
+
+  // Calculate simplified statistics
+  const getSimplifiedStatistics = () => {
+    if (!attendanceDates || attendanceDates.length === 0) {
+      return { present: 0, absent: 0, inProgress: 0, holidays: holidays.length };
+    }
+
+    const present = attendanceDates.filter(
+      (a) => a.present === 1 && a.attendance?.isCheckout
+    ).length;
+    const inProgress = attendanceDates.filter(
+      (a) => a.present === 1 && !a.attendance?.isCheckout
+    ).length;
+    const absent = attendanceDates.filter((a) => a.present === 0).length;
+
+    return {
+      present,
+      absent,
+      inProgress,
+      holidays: holidays.length,
+    };
+  };
+
+  const simplifiedStats = getSimplifiedStatistics();
+
   const enhancedMarkedDates = useMemo(() => {
     const marked = { ...markedDates };
     // Handle field trip dates - add proper null/undefined checks
@@ -481,6 +515,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
     return marked;
   }, [markedDates, fieldTripDates, selectedDate]);
+
   const calendarTheme = useMemo(
     () => ({
       backgroundColor: colors.white,
@@ -505,21 +540,17 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     }),
     []
   );
-  const renderStatisticsCard = () => {
-    if (!statistics) return null;
+
+  // Simplified Statistics Card
+  const renderSimplifiedStatisticsCard = () => {
     return (
       <Animated.View
         entering={FadeInDown.delay(100).springify()}
         style={styles.statisticsCard}
       >
-        <LinearGradient
-          colors={[colors.primary[500], colors.primary[600]]}
-          style={styles.gradientContainer}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.statisticsHeader}>
-            <Text style={styles.statisticsTitle}>Attendance Overview</Text>
+        <View style={styles.simpleStatsContainer}>
+          <View style={styles.simpleStatHeader}>
+            <Text style={styles.simpleStatTitle}>Monthly Summary</Text>
             <TouchableOpacity
               onPress={handleRefresh}
               style={styles.refreshButton}
@@ -528,58 +559,87 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
               <FontAwesome6
                 name="arrows-rotate"
                 size={16}
-                color={colors.white}
+                color={colors.gray[700]}
               />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <View style={styles.statIconContainer}>
+          <View style={styles.simpleStatsGrid}>
+            <View style={styles.simpleStatItem}>
+              <View
+                style={[
+                  styles.simpleStatIcon,
+                  { backgroundColor: colors.success + "20" },
+                ]}
+              >
                 <FontAwesome6
-                  name="calendar-check"
-                  size={24}
-                  color={colors.white}
+                  name="circle-check"
+                  size={20}
+                  color={colors.success}
                 />
               </View>
-              <Text style={styles.statValue}>
-                {statistics.totalDays.toFixed(1)}
-              </Text>
-              <Text style={styles.statLabel}>Total Days</Text>
+              <Text style={styles.simpleStatValue}>{simplifiedStats.present}</Text>
+              <Text style={styles.simpleStatLabel}>Present</Text>
             </View>
 
-            <View style={styles.statDivider} />
+            <View style={styles.simpleStatDivider} />
 
-            <View style={styles.statItem}>
-              <View style={styles.statIconContainer}>
-                <FontAwesome6 name="star" size={24} color={colors.white} />
+            <View style={styles.simpleStatItem}>
+              <View
+                style={[
+                  styles.simpleStatIcon,
+                  { backgroundColor: colors.error + "20" },
+                ]}
+              >
+                <FontAwesome6 name="circle-xmark" size={20} color={colors.error} />
               </View>
-              <Text style={styles.statValue}>
-                {statistics.totalFullDays || 0}
-              </Text>
-              <Text style={styles.statLabel}>Full Days</Text>
+              <Text style={styles.simpleStatValue}>{simplifiedStats.absent}</Text>
+              <Text style={styles.simpleStatLabel}>Absent</Text>
             </View>
 
-            <View style={styles.statDivider} />
+            <View style={styles.simpleStatDivider} />
 
-            <View style={styles.statItem}>
-              <View style={styles.statIconContainer}>
+            <View style={styles.simpleStatItem}>
+              <View
+                style={[
+                  styles.simpleStatIcon,
+                  { backgroundColor: colors.warning + "20" },
+                ]}
+              >
+                <FontAwesome6 name="clock" size={20} color={colors.warning} />
+              </View>
+              <Text style={styles.simpleStatValue}>
+                {simplifiedStats.inProgress}
+              </Text>
+              <Text style={styles.simpleStatLabel}>In Progress</Text>
+            </View>
+
+            <View style={styles.simpleStatDivider} />
+
+            <View style={styles.simpleStatItem}>
+              <View
+                style={[
+                  styles.simpleStatIcon,
+                  { backgroundColor: colors.info + "20" },
+                ]}
+              >
                 <FontAwesome6
-                  name="star-half-stroke"
-                  size={24}
-                  color={colors.white}
+                  name="calendar-week"
+                  size={20}
+                  color={colors.info}
                 />
               </View>
-              <Text style={styles.statValue}>
-                {statistics.totalHalfDays || 0}
+              <Text style={styles.simpleStatValue}>
+                {simplifiedStats.holidays}
               </Text>
-              <Text style={styles.statLabel}>Half Days</Text>
+              <Text style={styles.simpleStatLabel}>Holidays</Text>
             </View>
           </View>
-        </LinearGradient>
+        </View>
       </Animated.View>
     );
   };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -588,6 +648,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       </View>
     );
   }
+
   return (
     <ScrollView
       style={styles.container}
@@ -601,7 +662,8 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         />
       }
     >
-      {renderStatisticsCard()}
+      {renderSimplifiedStatisticsCard()}
+
       <View style={styles.calendarCard}>
         <Text style={styles.calendarTitle}>Attendance Calendar</Text>
 
@@ -632,25 +694,19 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
             <View
               style={[styles.legendDot, { backgroundColor: colors.success }]}
             />
-            <Text style={styles.legendText}>Full Day</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View
-              style={[styles.legendDot, { backgroundColor: colors.info }]}
-            />
-            <Text style={styles.legendText}>Half Day</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View
-              style={[styles.legendDot, { backgroundColor: colors.warning }]}
-            />
-            <Text style={styles.legendText}>In Progress</Text>
+            <Text style={styles.legendText}>Present</Text>
           </View>
           <View style={styles.legendItem}>
             <View
               style={[styles.legendDot, { backgroundColor: colors.error }]}
             />
             <Text style={styles.legendText}>Absent</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View
+              style={[styles.legendDot, { backgroundColor: colors.warning }]}
+            />
+            <Text style={styles.legendText}>In Progress</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: "#E0E7FF" }]} />
@@ -663,27 +719,26 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
           {fieldTripDates &&
             Array.isArray(fieldTripDates) &&
             fieldTripDates.length > 0 && (
-              <>
-                <View style={styles.legendItem}>
-                  <View
-                    style={[
-                      styles.legendDot,
-                      {
-                        backgroundColor: "#FEF3C7",
-                        borderWidth: 2,
-                        borderColor: "#F59E0B",
-                      },
-                    ]}
-                  />
-                  <Text style={styles.legendText}>Field Trip</Text>
-                </View>
-              </>
+              <View style={styles.legendItem}>
+                <View
+                  style={[
+                    styles.legendDot,
+                    {
+                      backgroundColor: "#FEF3C7",
+                      borderWidth: 2,
+                      borderColor: "#F59E0B",
+                    },
+                  ]}
+                />
+                <Text style={styles.legendText}>Field Trip</Text>
+              </View>
             )}
         </View>
       </View>
     </ScrollView>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -703,72 +758,63 @@ const styles = StyleSheet.create({
   statisticsCard: {
     margin: 16,
     borderRadius: 20,
-    overflow: "hidden",
-    shadowColor: colors.primary[900],
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
+    backgroundColor: colors.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  gradientContainer: {
+  simpleStatsContainer: {
     padding: 20,
   },
-  statisticsHeader: {
+  simpleStatHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
   },
-  statisticsTitle: {
+  simpleStatTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: colors.white,
+    color: colors.gray[800],
   },
   refreshButton: {
     padding: 8,
     borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: colors.gray[100],
   },
-  statsGrid: {
+  simpleStatsGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  statItem: {
+  simpleStatItem: {
     flex: 1,
     alignItems: "center",
   },
-  statIconContainer: {
+  simpleStatIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 8,
   },
-  statValue: {
-    fontSize: 28,
+  simpleStatValue: {
+    fontSize: 24,
     fontWeight: "bold",
-    color: colors.white,
+    color: colors.gray[800],
     marginBottom: 4,
   },
-  statLabel: {
+  simpleStatLabel: {
     fontSize: 12,
-    color: colors.gray[200],
+    color: colors.gray[600],
   },
-  statDivider: {
+  simpleStatDivider: {
     width: 1,
-    height: 60,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-  },
-  lastAttendanceContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.2)",
-  },
-  lastAttendanceText: {
-    fontSize: 14,
-    color: colors.gray[200],
-    marginLeft: 8,
+    height: 50,
+    backgroundColor: colors.gray[200],
   },
   calendarCard: {
     backgroundColor: colors.white,
@@ -818,7 +864,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     alignSelf: "flex-start",
-    marginBottom: 16,
   },
   attendanceBadgeText: {
     fontSize: 14,
@@ -835,6 +880,10 @@ const styles = StyleSheet.create({
   },
   attendanceDetailsContainer: {
     gap: 12,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
   },
   attendanceDetailRow: {
     flexDirection: "row",
