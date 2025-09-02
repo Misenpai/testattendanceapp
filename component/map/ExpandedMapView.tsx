@@ -1,7 +1,8 @@
+// component/map/ExpandedMapView.tsx
 import { expandedMapStyles } from "@/constants/style";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import React from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, StatusBar, StyleSheet, View } from "react-native";
 
 interface ExpandedMapViewProps {
   onClose: () => void;
@@ -14,10 +15,37 @@ export function ExpandedMapView({
 }: ExpandedMapViewProps) {
   return (
     <View style={expandedMapStyles.container}>
-      <Pressable onPress={onClose} style={expandedMapStyles.closeButton}>
+      <StatusBar backgroundColor="transparent" translucent />
+      
+      {/* Close Button - Top Left */}
+      <Pressable 
+        onPress={onClose} 
+        style={[expandedMapStyles.closeButton, styles.closeButton]}
+      >
         <FontAwesome6 name="xmark" size={24} color="white" />
       </Pressable>
-      <View style={expandedMapStyles.mapContainer}>{mapComponent}</View>
+      
+      {/* Map Container */}
+      <View style={expandedMapStyles.mapContainer}>
+        {mapComponent}
+      </View>
+      
+      {/* Note: Center-on-user button is handled within GeofenceMap component */}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  closeButton: {
+    // Ensure close button has higher z-index than other floating elements
+    zIndex: 1002,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+});

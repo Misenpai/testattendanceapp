@@ -14,6 +14,7 @@ import { useAuthStore } from "@/store/authStore";
 
 import { attendanceContainerStyles, globalStyles } from "@/constants/style";
 
+import { BUILDINGS, DEPT_TO_BUILDING, IIT_GUWAHATI_LOCATION } from "@/constants/geofenceLocation";
 import { AudioRecorder } from "../audio/AudioRecorder";
 import { CameraView } from "../camera/CameraView";
 import { ExpandedMapView } from "../map/ExpandedMapView";
@@ -21,7 +22,6 @@ import { GeofenceMap } from "../map/GeofenceMap";
 import { MapCard } from "../map/MapCard";
 import { LoadingScreen } from "../ui/LoadingScreen";
 import { HomeView } from "./HomeView";
-import { BUILDINGS, DEPT_TO_BUILDING, IIT_GUWAHATI_LOCATION } from "@/constants/geofenceLocation";
 
 type ListItem = { id: string; type: "map" | "attendance" };
 

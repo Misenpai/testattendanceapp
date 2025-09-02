@@ -381,6 +381,22 @@ export const permissionStyles = StyleSheet.create({
 });
 
 export const mapCardStyles = StyleSheet.create({
+
+  recenterButton: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 122, 255, 0.8)', // A blue color for location
+    padding: 10,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
   container: {
     margin: 20,
     marginBottom: 10,
@@ -411,6 +427,22 @@ export const mapCardStyles = StyleSheet.create({
 });
 
 export const expandedMapStyles = StyleSheet.create({
+    recenterButton: {
+    position: 'absolute',
+    bottom: 40,
+    right: 20,
+    backgroundColor: 'rgba(0, 122, 255, 0.9)',
+    padding: 12,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
   container: {
     flex: 1,
     position: "relative",
