@@ -313,11 +313,14 @@ export function HomeView({
   const attendanceRecords = useAttendanceStore(
     (state) => state.attendanceRecords
   );
+  console.log("UserLocationType", {userLocationType})
+  console.log("AttendanceRecords", attendanceRecords)
 
   const todayDateString = new Date().toISOString().split("T")[0];
   const todayRecord = attendanceRecords.find(
     (record) => record.date === todayDateString
   );
+  console.log("hello",todayRecord)
 
   useEffect(() => {
     const refreshAttendanceStatus = async () => {

@@ -257,7 +257,6 @@ export const useAttendanceStore = create<AttendanceState>()(
         if (!state.userId) return false;
 
         try {
-          // Import auth store to get headers
           const { useAuthStore } = await import("./authStore");
           const authHeaders = useAuthStore.getState().getAuthHeaders();
 
@@ -275,23 +274,31 @@ export const useAttendanceStore = create<AttendanceState>()(
           const data = await res.json();
           const today = getTodayDateString();
 
-          if (data.success && data.data) {
+          if (data.success && data.data && data.data.attendanceType) {
+            const attendanceType = data.data.attendanceType; // Access nested object
+
             const serverRecord: AttendanceRecord = {
               date: today,
-              timestamp: new Date(data.data.checkInTime).getTime(),
-              location: data.data.takenLocation || "Unknown",
+              timestamp: new Date(attendanceType.checkinTime).getTime(), // Fixed
+              location: attendanceType.takenLocation || "Unknown", // Fixed
               photosCount: data.data.photos?.length || 0,
               hasAudio: data.data.audio?.length > 0,
-              checkInTime: data.data.checkInTime,
-              checkOutTime: data.data.checkOutTime,
-              sessionType: data.data.sessionType,
-              attendanceType: data.data.attendanceType,
-              isCheckedOut: data.data.isCheckedOut,
-              takenLocation: data.data.takenLocation,
+              checkInTime: attendanceType.checkinTime, // Fixed
+              checkOutTime: attendanceType.checkoutTime, // Fixed
+              sessionType:
+                attendanceType.attendanceGivenTime === "FN"
+                  ? "FORENOON"
+                  : "AFTERNOON", // Fixed
+              attendanceType: attendanceType.fullDay ? "FULL_DAY" : "HALF_DAY", // Fixed
+              isCheckedOut: attendanceType.isCheckout, // Fixed
+              takenLocation: attendanceType.takenLocation, // Fixed
               attendanceKey: data.data.attendanceKey,
             };
+
             const canCheckout =
-              !data.data.isCheckedOut && data.data.sessionType !== undefined;
+              !attendanceType.isCheckout &&
+              attendanceType.attendanceGivenTime !== undefined;
+
             set({
               attendanceRecords: [
                 ...state.attendanceRecords.filter((r) => r.date !== today),
@@ -304,6 +311,7 @@ export const useAttendanceStore = create<AttendanceState>()(
             });
             return true;
           } else {
+            // Handle case where no attendance data exists
             set({
               attendanceRecords: state.attendanceRecords.filter(
                 (r) => r.date !== today
