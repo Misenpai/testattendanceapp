@@ -3,11 +3,9 @@ import { TermsAndConditionsScreen } from "@/component/ui/TermsAndConditionsScree
 import { useAudio } from "@/hooks/useAudio";
 import { useCamera } from "@/hooks/useCamera";
 import { useGeofence as useLocation } from "@/hooks/useGeofence";
-import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "expo-router";
 
 export default function TermsScreen() {
-  const { acceptTerms } = useAuthStore();
   const router = useRouter();
 
   const { requestPermission: requestCamera } = useCamera();
@@ -20,7 +18,6 @@ export default function TermsScreen() {
       requestMic(),
       requestLocation(),
     ]);
-    await acceptTerms();
     router.replace("/(tabs)");
   };
 

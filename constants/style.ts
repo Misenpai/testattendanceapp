@@ -4,7 +4,7 @@ import { colors } from "./colors";
 export const globalStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: colors.offwhite,
   },
 });
 
@@ -380,51 +380,64 @@ export const permissionStyles = StyleSheet.create({
   },
 });
 
-export const mapCardStyles = StyleSheet.create({
 
-  recenterButton: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    backgroundColor: 'rgba(0, 122, 255, 0.8)', // A blue color for location
-    padding: 10,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
+export const mapCardStyles = StyleSheet.create({
+  // Brutalist login-like container
   container: {
     margin: 20,
     marginBottom: 10,
-    borderRadius: 12,
-    overflow: "hidden",
-    elevation: 4,
+    borderWidth: 2,           // thick border
+    borderColor: "#000",      // harsh black outline
+    backgroundColor: "#fff",  // flat white fill
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 6, height: 6 }, // offset shadow for brutalist effect
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 8,
   },
+
   mapContainer: {
     height: 200,
     position: "relative",
+    borderBottomWidth: 2,     // brutal separation
+    borderColor: "#000",
   },
+
   expandButton: {
     position: "absolute",
     bottom: 10,
     left: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: "#000",  // solid black
     padding: 8,
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
+    borderWidth: 2,
+    borderColor: "#000",
     justifyContent: "center",
     alignItems: "center",
+    // no rounded corners → brutalist block
+  },
+
+  recenterButton: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    backgroundColor: "#fff",  // inverted brutalist style
+    padding: 10,
+    width: 44,
+    height: 44,
+    borderWidth: 3,
+    borderColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 6,
   },
 });
+
 
 export const expandedMapStyles = StyleSheet.create({
     recenterButton: {

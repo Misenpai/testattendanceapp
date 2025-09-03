@@ -86,4 +86,7 @@ export const colors = {
   
   // Keep the 'transparent' string for compatibility
   transparentColor: "transparent",
+  offwhite: "#fffff3",
+  lightYellow: "#ffe182",
+  lightGreen: "#dcfd00"
 };

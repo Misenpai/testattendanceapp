@@ -1,7 +1,6 @@
 import { colors } from "@/constants/colors";
 import { useAuthStore } from "@/store/authStore";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
   Alert,
@@ -34,10 +33,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={[colors.primary[500], colors.primary[700]]}
-      style={styles.container}
-    >
+    <View style={[styles.container, { backgroundColor: colors.offwhite }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -55,14 +51,14 @@ export default function LoginScreen() {
               <FontAwesome6
                 name="fingerprint"
                 size={50}
-                color={colors.primary[500]}
+                color={colors.lightYellow}
               />
             </View>
             <Text style={styles.brandName}>Attendance System</Text>
             <Text style={styles.tagline}>IIT Guwahati</Text>
           </Animated.View>
 
-          {/* Login Form Card */}
+          {/* Brutalist Login Form Card */}
           <Animated.View
             entering={FadeInUp.delay(200).springify()}
             style={styles.formCard}
@@ -75,13 +71,13 @@ export default function LoginScreen() {
               <FontAwesome6
                 name="user"
                 size={20}
-                color={colors.gray[400]}
+                color={"#000"}
                 style={styles.inputIcon}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Username"
-                placeholderTextColor={colors.gray[400]}
+                placeholderTextColor={"#555"}
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
@@ -94,13 +90,13 @@ export default function LoginScreen() {
               <FontAwesome6
                 name="lock"
                 size={20}
-                color={colors.gray[400]}
+                color={"#000"}
                 style={styles.inputIcon}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
-                placeholderTextColor={colors.gray[400]}
+                placeholderTextColor={"#555"}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -112,7 +108,7 @@ export default function LoginScreen() {
                 <FontAwesome6
                   name={showPassword ? "eye" : "eye-slash"}
                   size={20}
-                  color={colors.gray[400]}
+                  color={"#000"}
                 />
               </TouchableOpacity>
             </View>
@@ -122,23 +118,16 @@ export default function LoginScreen() {
               style={[styles.loginButton, isLoading && styles.buttonDisabled]}
               onPress={handleLogin}
               disabled={isLoading}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <LinearGradient
-                colors={[colors.primary[500], colors.primary[600]]}
-                style={styles.gradientButton}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <Text style={styles.loginButtonText}>
-                  {isLoading ? "Signing in..." : "Sign In"}
-                </Text>
-              </LinearGradient>
+              <Text style={styles.loginButtonText}>
+                {isLoading ? "Signing in..." : "Sign In"}
+              </Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -175,44 +164,49 @@ const styles = StyleSheet.create({
   brandName: {
     fontSize: 32,
     fontWeight: "bold",
-    color: colors.white,
+    color: colors.black,
     marginBottom: 4,
   },
   tagline: {
     fontSize: 16,
-    color: colors.gray[200],
+    color: colors.gray[500],
   },
+
   formCard: {
-    backgroundColor: colors.white,
-    borderRadius: 24,
+    backgroundColor: "#fff",
+    borderWidth: 4,
+    borderColor: "#000",
     padding: 24,
+    marginHorizontal: 10,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 10, height: 10 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 8,
   },
   welcomeText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: colors.gray[800],
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#000",
+    textTransform: "uppercase",
+    marginBottom: 8,
   },
   subtitleText: {
-    fontSize: 16,
-    color: colors.gray[500],
+    fontSize: 14,
+    color: "#000",
+    fontWeight: "600",
     marginBottom: 24,
   },
+
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.gray[50],
-    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderWidth: 3,
+    borderColor: "#000",
     marginBottom: 16,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     height: 56,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
   },
   inputIcon: {
     marginRight: 12,
@@ -220,106 +214,33 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: colors.gray[800],
+    fontWeight: "600",
+    color: "#000",
   },
   eyeIcon: {
     padding: 4,
   },
-  optionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  rememberContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: colors.gray[300],
-    marginRight: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkboxChecked: {
-    backgroundColor: colors.primary[500],
-    borderColor: colors.primary[500],
-  },
-  rememberText: {
-    fontSize: 14,
-    color: colors.gray[600],
-  },
-  forgotText: {
-    fontSize: 14,
-    color: colors.primary[500],
-    fontWeight: "600",
-  },
+
   loginButton: {
-    marginBottom: 20,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  gradientButton: {
-    height: 56,
-    justifyContent: "center",
+    marginTop: 12,
+    paddingVertical: 16,
     alignItems: "center",
+    borderWidth: 3,
+    borderColor: "#000",
+    backgroundColor: "#dcfd00",
+    shadowColor: "#000",
+    shadowOffset: { width: 5, height: 5 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 6,
+  },
+  loginButtonText: {
+    color: "#000",
+    fontSize: 16,
+    fontWeight: "900",
+    textTransform: "uppercase",
   },
   buttonDisabled: {
     opacity: 0.6,
-  },
-  loginButtonText: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.gray[200],
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: colors.gray[400],
-    fontWeight: "500",
-  },
-  socialContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 20,
-    marginBottom: 24,
-  },
-  socialButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: colors.gray[50],
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-  signupContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  signupText: {
-    fontSize: 14,
-    color: colors.gray[600],
-  },
-  signupLink: {
-    fontSize: 14,
-    color: colors.primary[500],
-    fontWeight: "600",
   },
 });
