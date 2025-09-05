@@ -82,6 +82,12 @@ interface AttendanceState {
   // Department setter
   setDepartment: (department: string) => void;
   fetchUserDepartment: () => Promise<void>;
+
+  // Add this new action
+  updateInProgressToPresent: () => Promise<void>;
+  startAutoUpdateTimer: () => void;
+  stopAutoUpdateTimer: () => void;
+  autoUpdateTimerId: ReturnType<typeof setInterval> | null;
 }
 
 const getTodayDateString = () => new Date().toISOString().split("T")[0];
@@ -122,6 +128,7 @@ export const useAttendanceStore = create<AttendanceState>()(
 
       // NEW
       department: null,
+      autoUpdateTimerId: null,
 
       // Actions
       initializeUserId: async () => {
@@ -135,6 +142,9 @@ export const useAttendanceStore = create<AttendanceState>()(
               isLoadingUserId: false,
               isInitialized: true,
             });
+
+            // Start the auto-update timer
+            get().startAutoUpdateTimer();
 
             // Fetch user location settings first, then department, then attendance
             await get().fetchUserLocationSettings();
@@ -181,6 +191,7 @@ export const useAttendanceStore = create<AttendanceState>()(
       },
 
       clearUserId: () => {
+        get().stopAutoUpdateTimer();
         set({
           userId: null,
           photos: [],
@@ -199,6 +210,7 @@ export const useAttendanceStore = create<AttendanceState>()(
           currentSessionType: null,
           canCheckout: false,
           department: null,
+          autoUpdateTimerId: null,
         });
       },
 
@@ -517,6 +529,76 @@ export const useAttendanceStore = create<AttendanceState>()(
 
       // NEW
       setDepartment: (department) => set({ department }),
+
+      // New method to update in-progress attendance to present after 11 PM
+      updateInProgressToPresent: async () => {
+        const state = get();
+        const now = new Date();
+        const currentHour = now.getHours();
+
+        // Only run after 11 PM (23:00)
+        if (currentHour >= 23) {
+          const today = getTodayDateString();
+          const todayRecord = state.attendanceRecords.find(
+            (r) => r.date === today
+          );
+
+          // Check if attendance is marked but not checked out
+          if (
+            todayRecord &&
+            !todayRecord.isCheckedOut &&
+            state.todayAttendanceMarked
+          ) {
+            // Update local state to show as present instead of in-progress
+            const updatedRecord = {
+              ...todayRecord,
+              // Keep isCheckedOut as false and checkOutTime as null/undefined
+              // This will make it appear as "Present" in the UI logic
+            };
+
+            set({
+              attendanceRecords: [
+                ...state.attendanceRecords.filter((r) => r.date !== today),
+                updatedRecord,
+              ],
+              lastAttendanceUpdate: Date.now(),
+            });
+
+            console.log(
+              "Auto-updated attendance from In Progress to Present after 11 PM"
+            );
+          }
+        }
+      },
+
+      // Start the auto-update timer
+      startAutoUpdateTimer: () => {
+        const state = get();
+
+        // Clear any existing timer
+        if (state.autoUpdateTimerId) {
+          clearInterval(state.autoUpdateTimerId);
+        }
+
+        // Check immediately
+        state.updateInProgressToPresent();
+
+        // Set up interval to check every minute
+        const timerId = setInterval(() => {
+          state.updateInProgressToPresent();
+        }, 60000); // Check every minute
+
+        set({ autoUpdateTimerId: timerId });
+      },
+
+      // Stop the auto-update timer
+      stopAutoUpdateTimer: () => {
+        const state = get();
+        if (state.autoUpdateTimerId) {
+          clearInterval(state.autoUpdateTimerId);
+          set({ autoUpdateTimerId: null });
+        }
+      },
     }),
     {
       name: "attendance-storage",

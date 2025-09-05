@@ -3,6 +3,7 @@ import { colors } from "./colors";
 
 export const globalStyles = StyleSheet.create({
   container: {
+    paddingTop: 20,
     flex: 1,
     backgroundColor: colors.offwhite,
   },
@@ -84,72 +85,48 @@ export const photoGridStyles = StyleSheet.create({
 });
 
 export const audioStyles = StyleSheet.create({
-  section: {
-    marginBottom: 30,
-    paddingHorizontal: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.gray.dark, // This is fine - using the legacy value
-    textAlign: "center",
-    marginBottom: 15,
-  },
-  previewContainer: {
-    alignItems: "center",
-  },
+  // Styles for AudioPlayer & AudioControls
   preview: {
-    backgroundColor: "#e8f4fd",
-    padding: 20,
-    borderRadius: 12,
+    width: "100%",
+    borderWidth: 4,
+    borderColor: "#000",
+    backgroundColor: "#fff",
+    padding: 24,
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: colors.primary[500], // ✅ Fixed: Use specific shade
-    minWidth: 200,
   },
   previewText: {
-    marginTop: 8,
+    marginTop: 16,
+    color: "#000",
     fontSize: 16,
-    color: colors.background.primary,
-    fontWeight: "600",
+    lineHeight: 1.4,
+    fontWeight: "900",
+    textTransform: "uppercase",
   },
   controls: {
     flexDirection: "row",
-    marginTop: 12,
-    gap: 10,
+    marginTop: 20,
+    gap: 16,
+    width: "100%",
   },
   playButton: {
-    backgroundColor: colors.background.primary,
-    padding: 8,
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+    flex: 1,
+    borderWidth: 3,
+    borderColor: "#000",
+    backgroundColor: "#000",
+    color: "#fff",
+    padding: 12,
     justifyContent: "center",
     alignItems: "center",
   },
   deleteButton: {
-    backgroundColor: colors.background.secondary,
-    padding: 8,
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+    flex: 1,
+    borderWidth: 3,
+    borderColor: "#000",
+    backgroundColor: "#fff",
+    color: "#000",
+    padding: 12,
     justifyContent: "center",
     alignItems: "center",
-  },
-  recordButton: {
-    backgroundColor: "#f0f0f0",
-    padding: 20,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: colors.gray[300], // ✅ Fixed: Use specific shade
-    borderStyle: "dashed",
-  },
-  recordButtonText: {
-    marginTop: 8,
-    fontSize: 16,
-    color: colors.background.primary,
-    fontWeight: "600",
   },
 });
 
@@ -225,87 +202,139 @@ export const cameraStyles = StyleSheet.create({
 });
 
 export const audioRecorderStyles = StyleSheet.create({
+  // Styles for AudioRecorder
   container: {
     flex: 1,
-    backgroundColor: colors.black,
-  },
-  datePrompt: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 8,
-  },
-  dateText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  waveformContainer: {
-    height: 100,
-    marginVertical: 20,
-    paddingHorizontal: 16,
-  },
-  waveform: {
-    flex: 1,
-  },
-  playbackControls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 20,
-    marginTop: 20,
-  },
-  controlButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#fff",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: 60,
+    paddingTop: 60, // Adjust for safe area
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 4,
+    borderColor: "#000",
+  },
+  backButton: {
+    padding: 8,
   },
   title: {
-    color: colors.white,
-    fontSize: 20,
-    fontWeight: "600",
-    marginLeft: 20,
+    color: "#000",
+    fontSize: 24,
+    fontWeight: "900",
+    marginLeft: 16,
+    textTransform: "uppercase",
   },
   content: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingBottom: 100,
+    justifyContent: "flex-start",
+    padding: 20,
   },
-  recordingIndicator: {
+  datePrompt: {
     alignItems: "center",
-    marginBottom: 50,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: "#000",
+    borderStyle: "dashed",
+    marginBottom: 20,
+  },
+  dateText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+    textAlign: "center",
+  },
+  waveformContainer: {
+    height: 120,
+    borderWidth: 4,
+    borderColor: "#000",
+    backgroundColor: "#fff",
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    overflow: "hidden",
+    paddingHorizontal: 10,
+    marginVertical: 20,
+  },
+  waveform: {
+    display: "flex",
+    flexDirection: "row",
+    overflow: "hidden",
+    gap: 3,
+    alignItems: "center",
+    minWidth: 50,
+  },
+  durationContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  durationText: {
+    color: "#000",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  statusIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    paddingVertical: 10,
+    borderTopWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: "#000",
   },
   recordingDot: {
     width: 12,
     height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.background.secondary,
-    marginBottom: 10,
+    backgroundColor: "#FF3B30",
+    marginRight: 12,
   },
-  recordingText: {
-    color: colors.white,
+  statusText: {
+    color: "#000",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "900",
+    textTransform: "uppercase",
   },
-  recordButton: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  controlsContainer: {
+    padding: 20,
+    borderTopWidth: 4,
+    borderColor: "#000",
+  },
+  controlButtonBase: {
     justifyContent: "center",
     alignItems: "center",
+    padding: 16,
+    borderWidth: 4,
+    borderColor: "#000",
+  },
+  recordButton: {
+    backgroundColor: "#000",
+  },
+  stopButton: {
+    backgroundColor: "#FF3B30", // Red
+  },
+  playbackControls: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+  },
+  retakeButton: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  playPauseButton: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  completeButton: {
+    flex: 1,
+    backgroundColor: "#000",
   },
 });
 

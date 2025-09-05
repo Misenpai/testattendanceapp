@@ -25,9 +25,35 @@ import {
 import { Calendar } from "react-native-calendars";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
+// Brutalist Color Palette
+const brutalistColors = {
+  background: "#FFFFFF",
+  text: "#000000",
+  border: "#000000",
+  primary: "#000000",
+  white: "#FFFFFF",
+  present: "#34D399", // A strong green
+  absent: "#F87171", // A strong red
+  inProgress: "#f1eabfff", // A strong yellow/amber
+  holiday: "#F59E0B", // A strong orange for holidays
+  weekend: "#818CF8", // A strong indigo/purple for weekends
+  fieldTrip: "#F59E0B",
+  disabled: "#D1D5DB",
+};
+
 interface AttendanceCalendarProps {
   employeeCode: string;
 }
+
+// A reusable wrapper for the brutalist card style
+const BrutalistCard: React.FC<{ children: React.ReactNode; style?: any }> = ({
+  children,
+  style,
+}) => (
+  <View style={styles.brutalistCardWrapper}>
+    <View style={[styles.brutalistCard, style]}>{children}</View>
+  </View>
+);
 
 export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   employeeCode,
@@ -188,10 +214,96 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
     if (!attendance) {
       return (
-        <Animated.View
-          entering={FadeInUp.duration(300)}
-          style={styles.selectedDateCard}
-        >
+        <Animated.View entering={FadeInUp.duration(300)}>
+          <BrutalistCard>
+            <Text style={styles.selectedDateTitle}>
+              {new Date(selectedDate).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </Text>
+
+            {holiday ? (
+              <View style={styles.noDataContainer}>
+                <FontAwesome6
+                  name={holiday.isWeekend ? "calendar-week" : "calendar-xmark"}
+                  size={32}
+                  color={holiday.isWeekend ? brutalistColors.weekend : brutalistColors.holiday}
+                />
+                <Text style={styles.noDataText}>{holiday.description}</Text>
+                <Text style={styles.noDataSubText}>
+                  {holiday.isWeekend ? "Weekend" : "Holiday"}
+                </Text>
+              </View>
+            ) : isFieldTrip ? (
+              <View style={styles.noDataContainer}>
+                <FontAwesome6
+                  name="route"
+                  size={32}
+                  color={brutalistColors.fieldTrip}
+                />
+                <Text style={styles.noDataText}>
+                  Field Trip - No attendance marked
+                </Text>
+                <Text style={styles.noDataSubText}>
+                  Attendance can still be marked during field trips
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.noDataContainer}>
+                <FontAwesome6
+                  name="calendar-xmark"
+                  size={32}
+                  color={brutalistColors.text}
+                />
+                <Text style={styles.noDataText}>No attendance marked</Text>
+              </View>
+            )}
+          </BrutalistCard>
+        </Animated.View>
+      );
+    }
+
+    const getAttendanceStatus = () => {
+      if (attendance.present === 0) {
+        return {
+          label: "Absent",
+          color: brutalistColors.absent,
+          icon: "calendar-xmark",
+        };
+      }
+
+      if (!attendance.attendance) {
+        return {
+          label: "Present",
+          color: brutalistColors.present,
+          icon: "check",
+        };
+      }
+
+      if (!attendance.attendance.isCheckout) {
+        return {
+          label: "In Progress",
+          color: brutalistColors.inProgress,
+          icon: "clock",
+        };
+      }
+
+      // If checked out, just show as Present
+      return {
+        label: "Present",
+        color: brutalistColors.present,
+        icon: "circle-check",
+      };
+    };
+
+    const status = getAttendanceStatus();
+
+    return (
+      <Animated.View entering={FadeInUp.duration(300)}>
+        <BrutalistCard>
           <Text style={styles.selectedDateTitle}>
             {new Date(selectedDate).toLocaleDateString("en-US", {
               weekday: "long",
@@ -201,230 +313,158 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
             })}
           </Text>
 
-          {holiday ? (
-            <View style={styles.holidayContainer}>
-              <FontAwesome6
-                name={holiday.isWeekend ? "calendar-week" : "calendar-xmark"}
-                size={32}
-                color={colors.warning}
-              />
-              <Text style={styles.holidayText}>{holiday.description}</Text>
-              <Text style={styles.holidaySubText}>
-                {holiday.isWeekend ? "Weekend" : "Holiday"}
-              </Text>
-            </View>
-          ) : isFieldTrip ? (
-            <View style={styles.fieldTripNoAttendanceContainer}>
-              <FontAwesome6 name="route" size={32} color={colors.warning} />
-              <Text style={styles.fieldTripNoAttendanceText}>
-                Field Trip - No attendance marked
-              </Text>
-              <Text style={styles.fieldTripSubText}>
-                Attendance can still be marked during field trips
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.noAttendanceContainer}>
-              <FontAwesome6
-                name="calendar-xmark"
-                size={32}
-                color={colors.gray[400]}
-              />
-              <Text style={styles.noAttendanceText}>No attendance marked</Text>
-            </View>
-          )}
-        </Animated.View>
-      );
-    }
-
-    const getAttendanceStatus = () => {
-      if (attendance.present === 0) {
-        return {
-          label: "Absent",
-          color: colors.error,
-          icon: "calendar-xmark",
-          backgroundColor: colors.error + "20",
-        };
-      }
-
-      if (!attendance.attendance) {
-        return {
-          label: "Present",
-          color: colors.success,
-          icon: "check",
-          backgroundColor: colors.success + "20",
-        };
-      }
-
-      if (!attendance.attendance.isCheckout) {
-        return {
-          label: "In Progress",
-          color: colors.warning,
-          icon: "clock",
-          backgroundColor: colors.warning + "20",
-        };
-      }
-
-      // If checked out, just show as Present (details will show full/half day)
-      return {
-        label: "Present",
-        color: colors.success,
-        icon: "circle-check",
-        backgroundColor: colors.success + "20",
-      };
-    };
-
-    const status = getAttendanceStatus();
-
-    return (
-      <Animated.View
-        entering={FadeInUp.duration(300)}
-        style={styles.selectedDateCard}
-      >
-        <Text style={styles.selectedDateTitle}>
-          {new Date(selectedDate).toLocaleDateString("en-US", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </Text>
-
-        <View style={styles.badgeContainer}>
-          <View
-            style={[
-              styles.attendanceBadge,
-              {
-                backgroundColor: status.backgroundColor,
-                borderColor: status.color,
-              },
-            ]}
-          >
-            <FontAwesome6 name={status.icon} size={18} color={status.color} />
-            <Text style={[styles.attendanceBadgeText, { color: status.color }]}>
-              {status.label}
-            </Text>
-          </View>
-
-          {isFieldTrip && (
+          <View style={styles.badgeContainer}>
             <View
               style={[
-                styles.fieldTripBadge,
-                { backgroundColor: "#FEF3C7", borderColor: "#F59E0B" },
-              ]}
-            >
-              <FontAwesome6 name="route" size={16} color="#F59E0B" />
-              <Text style={[styles.fieldTripBadgeText, { color: "#F59E0B" }]}>
-                Field Trip
-              </Text>
-            </View>
-          )}
-
-          {holiday && (
-            <View
-              style={[
-                styles.holidayBadge,
+                styles.attendanceBadge,
                 {
-                  backgroundColor: holiday.isWeekend ? "#E0E7FF" : "#FEF3C7",
-                  borderColor: holiday.isWeekend ? "#6366F1" : "#F59E0B",
+                  backgroundColor: status.color,
                 },
               ]}
             >
               <FontAwesome6
-                name={holiday.isWeekend ? "calendar-week" : "calendar-xmark"}
+                name={status.icon}
                 size={16}
-                color={holiday.isWeekend ? "#6366F1" : "#F59E0B"}
+                color={brutalistColors.white}
               />
               <Text
                 style={[
-                  styles.holidayBadgeText,
-                  { color: holiday.isWeekend ? "#6366F1" : "#F59E0B" },
+                  styles.attendanceBadgeText,
+                  { color: brutalistColors.white },
                 ]}
               >
-                {holiday.description}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {attendance.attendance && attendance.present === 1 && (
-          <View style={styles.attendanceDetailsContainer}>
-            {/* Show Full Day or Half Day status for present days */}
-            {attendance.attendance.isCheckout && (
-              <View style={styles.attendanceDetailRow}>
-                <FontAwesome6
-                  name="calendar-day"
-                  size={16}
-                  color={colors.primary[500]}
-                />
-                <Text style={styles.attendanceDetailLabel}>Day Type:</Text>
-                <Text style={styles.attendanceDetailValue}>
-                  {attendance.attendance.fullDay ? "Full Day" : "Half Day"}
-                </Text>
-              </View>
-            )}
-
-            {attendance.attendance.sessionType && (
-              <View style={styles.attendanceDetailRow}>
-                <FontAwesome6
-                  name="business-time"
-                  size={16}
-                  color={colors.primary[500]}
-                />
-                <Text style={styles.attendanceDetailLabel}>Session:</Text>
-                <Text style={styles.attendanceDetailValue}>
-                  {attendance.attendance.sessionType === "FN"
-                    ? "Forenoon"
-                    : "Afternoon"}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.attendanceDetailRow}>
-              <FontAwesome6
-                name="location-dot"
-                size={16}
-                color={colors.primary[500]}
-              />
-              <Text style={styles.attendanceDetailLabel}>Location:</Text>
-              <Text style={styles.attendanceDetailValue}>
-                {attendance.attendance.takenLocation || "Not specified"}
+                {status.label}
               </Text>
             </View>
 
-            {attendance.attendance.checkinTime && (
-              <View style={styles.attendanceDetailRow}>
+            {isFieldTrip && (
+              <View
+                style={[
+                  styles.attendanceBadge,
+                  { backgroundColor: brutalistColors.fieldTrip },
+                ]}
+              >
                 <FontAwesome6
-                  name="right-to-bracket"
+                  name="route"
                   size={16}
-                  color={colors.primary[500]}
+                  color={brutalistColors.white}
                 />
-                <Text style={styles.attendanceDetailLabel}>Check-in:</Text>
-                <Text style={styles.attendanceDetailValue}>
-                  {new Date(
-                    attendance.attendance.checkinTime
-                  ).toLocaleTimeString()}
+                <Text
+                  style={[
+                    styles.attendanceBadgeText,
+                    { color: brutalistColors.white },
+                  ]}
+                >
+                  Field Trip
                 </Text>
               </View>
             )}
 
-            {attendance.attendance.checkoutTime && (
-              <View style={styles.attendanceDetailRow}>
+            {holiday && (
+              <View
+                style={[
+                  styles.attendanceBadge,
+                  {
+                    backgroundColor: holiday.isWeekend ? brutalistColors.weekend : brutalistColors.holiday,
+                  },
+                ]}
+              >
                 <FontAwesome6
-                  name="right-from-bracket"
+                  name={holiday.isWeekend ? "calendar-week" : "calendar-xmark"}
                   size={16}
-                  color={colors.primary[500]}
+                  color={brutalistColors.white}
                 />
-                <Text style={styles.attendanceDetailLabel}>Check-out:</Text>
-                <Text style={styles.attendanceDetailValue}>
-                  {new Date(
-                    attendance.attendance.checkoutTime
-                  ).toLocaleTimeString()}
+                <Text
+                  style={[
+                    styles.attendanceBadgeText,
+                    { color: brutalistColors.white },
+                  ]}
+                >
+                  {holiday.description}
                 </Text>
               </View>
             )}
           </View>
-        )}
+
+          {attendance.attendance && attendance.present === 1 && (
+            <View style={styles.attendanceDetailsContainer}>
+              {/* Show Full Day or Half Day status for present days */}
+              {attendance.attendance.isCheckout && (
+                <View style={styles.attendanceDetailRow}>
+                  <FontAwesome6
+                    name="calendar-day"
+                    size={16}
+                    color={brutalistColors.text}
+                  />
+                  <Text style={styles.attendanceDetailLabel}>Day Type:</Text>
+                  <Text style={styles.attendanceDetailValue}>
+                    {attendance.attendance.fullDay ? "Full Day" : "Half Day"}
+                  </Text>
+                </View>
+              )}
+
+              {attendance.attendance.sessionType && (
+                <View style={styles.attendanceDetailRow}>
+                  <FontAwesome6
+                    name="business-time"
+                    size={16}
+                    color={brutalistColors.text}
+                  />
+                  <Text style={styles.attendanceDetailLabel}>Session:</Text>
+                  <Text style={styles.attendanceDetailValue}>
+                    {attendance.attendance.sessionType === "FN"
+                      ? "Forenoon"
+                      : "Afternoon"}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.attendanceDetailRow}>
+                <FontAwesome6
+                  name="location-dot"
+                  size={16}
+                  color={brutalistColors.text}
+                />
+                <Text style={styles.attendanceDetailLabel}>Location:</Text>
+                <Text style={styles.attendanceDetailValue}>
+                  {attendance.attendance.takenLocation || "Not specified"}
+                </Text>
+              </View>
+
+              {attendance.attendance.checkinTime && (
+                <View style={styles.attendanceDetailRow}>
+                  <FontAwesome6
+                    name="right-to-bracket"
+                    size={16}
+                    color={brutalistColors.text}
+                  />
+                  <Text style={styles.attendanceDetailLabel}>Check-in:</Text>
+                  <Text style={styles.attendanceDetailValue}>
+                    {new Date(
+                      attendance.attendance.checkinTime
+                    ).toLocaleTimeString()}
+                  </Text>
+                </View>
+              )}
+
+              {attendance.attendance.checkoutTime && (
+                <View style={styles.attendanceDetailRow}>
+                  <FontAwesome6
+                    name="right-from-bracket"
+                    size={16}
+                    color={brutalistColors.text}
+                  />
+                  <Text style={styles.attendanceDetailLabel}>Check-out:</Text>
+                  <Text style={styles.attendanceDetailValue}>
+                    {new Date(
+                      attendance.attendance.checkoutTime
+                    ).toLocaleTimeString()}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </BrutalistCard>
       </Animated.View>
     );
   };
@@ -455,7 +495,8 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
   const enhancedMarkedDates = useMemo(() => {
     const marked = { ...markedDates };
-    // Handle field trip dates - add proper null/undefined checks
+    
+    // Handle field trip dates
     if (
       fieldTripDates &&
       Array.isArray(fieldTripDates) &&
@@ -480,8 +521,8 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                 ...marked[dateStr].customStyles,
                 container: {
                   ...marked[dateStr].customStyles?.container,
-                  borderWidth: 2,
-                  borderColor: "#F59E0B",
+                  borderWidth: 3,
+                  borderColor: brutalistColors.fieldTrip,
                 },
               },
             };
@@ -489,14 +530,13 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
             marked[dateStr] = {
               customStyles: {
                 container: {
-                  backgroundColor: "#FEF3C7",
-                  borderRadius: 6,
-                  borderWidth: 1,
-                  borderColor: "#F59E0B",
+                  backgroundColor: brutalistColors.background,
+                  borderWidth: 3,
+                  borderColor: brutalistColors.fieldTrip,
                 },
                 text: {
-                  color: "#92400E",
-                  fontWeight: "500",
+                  color: brutalistColors.text,
+                  fontWeight: "600",
                 },
               },
             };
@@ -509,7 +549,8 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       marked[selectedDate] = {
         ...marked[selectedDate],
         selected: true,
-        selectedColor: colors.primary[500],
+        selectedColor: brutalistColors.primary,
+        selectedTextColor: brutalistColors.white,
       };
     }
 
@@ -518,39 +559,46 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
   const calendarTheme = useMemo(
     () => ({
-      backgroundColor: colors.white,
-      calendarBackground: colors.white,
-      textSectionTitleColor: colors.gray[600],
-      selectedDayBackgroundColor: colors.primary[500],
-      selectedDayTextColor: colors.white,
-      todayTextColor: colors.primary[500],
-      dayTextColor: colors.gray[800],
-      textDisabledColor: colors.gray[300],
-      dotColor: colors.success,
-      selectedDotColor: colors.white,
-      arrowColor: colors.primary[500],
-      monthTextColor: colors.gray[800],
-      indicatorColor: colors.primary[500],
-      textDayFontWeight: "400" as const,
-      textMonthFontWeight: "bold" as const,
-      textDayHeaderFontWeight: "600" as const,
+      backgroundColor: brutalistColors.background,
+      calendarBackground: brutalistColors.background,
+      textSectionTitleColor: brutalistColors.text,
+      selectedDayBackgroundColor: brutalistColors.primary,
+      selectedDayTextColor: brutalistColors.white,
+      todayTextColor: brutalistColors.primary,
+      dayTextColor: brutalistColors.text,
+      textDisabledColor: brutalistColors.disabled,
+      dotColor: brutalistColors.present,
+      selectedDotColor: brutalistColors.white,
+      arrowColor: brutalistColors.primary,
+      monthTextColor: brutalistColors.text,
+      indicatorColor: brutalistColors.primary,
+      textDayFontWeight: "600" as const,
+      textMonthFontWeight: "900" as const,
+      textDayHeaderFontWeight: "700" as const,
       textDayFontSize: 16,
-      textMonthFontSize: 18,
+      textMonthFontSize: 20,
       textDayHeaderFontSize: 14,
+      "stylesheet.calendar.header": {
+        week: {
+          marginTop: 10,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          borderBottomWidth: 3,
+          borderColor: brutalistColors.border,
+          paddingBottom: 10,
+        },
+      },
     }),
     []
   );
 
-  // Simplified Statistics Card
+  // Simplified Statistics Card with brutalist styling
   const renderSimplifiedStatisticsCard = () => {
     return (
-      <Animated.View
-        entering={FadeInDown.delay(100).springify()}
-        style={styles.statisticsCard}
-      >
-        <View style={styles.simpleStatsContainer}>
-          <View style={styles.simpleStatHeader}>
-            <Text style={styles.simpleStatTitle}>Monthly Summary</Text>
+      <Animated.View entering={FadeInDown.delay(100).springify()}>
+        <BrutalistCard>
+          <View style={styles.headerContainer}>
+            <Text style={styles.cardTitle}>MONTHLY SUMMARY</Text>
             <TouchableOpacity
               onPress={handleRefresh}
               style={styles.refreshButton}
@@ -558,57 +606,33 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
             >
               <FontAwesome6
                 name="arrows-rotate"
-                size={16}
-                color={colors.gray[700]}
+                size={18}
+                color={brutalistColors.text}
               />
             </TouchableOpacity>
           </View>
 
           <View style={styles.simpleStatsGrid}>
             <View style={styles.simpleStatItem}>
-              <View
-                style={[
-                  styles.simpleStatIcon,
-                  { backgroundColor: colors.success + "20" },
-                ]}
-              >
-                <FontAwesome6
-                  name="circle-check"
-                  size={20}
-                  color={colors.success}
-                />
-              </View>
-              <Text style={styles.simpleStatValue}>{simplifiedStats.present}</Text>
+              <Text style={[styles.simpleStatValue, { color: brutalistColors.present }]}>
+                {simplifiedStats.present}
+              </Text>
               <Text style={styles.simpleStatLabel}>Present</Text>
             </View>
 
             <View style={styles.simpleStatDivider} />
 
             <View style={styles.simpleStatItem}>
-              <View
-                style={[
-                  styles.simpleStatIcon,
-                  { backgroundColor: colors.error + "20" },
-                ]}
-              >
-                <FontAwesome6 name="circle-xmark" size={20} color={colors.error} />
-              </View>
-              <Text style={styles.simpleStatValue}>{simplifiedStats.absent}</Text>
+              <Text style={[styles.simpleStatValue, { color: brutalistColors.absent }]}>
+                {simplifiedStats.absent}
+              </Text>
               <Text style={styles.simpleStatLabel}>Absent</Text>
             </View>
 
             <View style={styles.simpleStatDivider} />
 
             <View style={styles.simpleStatItem}>
-              <View
-                style={[
-                  styles.simpleStatIcon,
-                  { backgroundColor: colors.warning + "20" },
-                ]}
-              >
-                <FontAwesome6 name="clock" size={20} color={colors.warning} />
-              </View>
-              <Text style={styles.simpleStatValue}>
+              <Text style={[styles.simpleStatValue, { color: brutalistColors.inProgress }]}>
                 {simplifiedStats.inProgress}
               </Text>
               <Text style={styles.simpleStatLabel}>In Progress</Text>
@@ -617,25 +641,13 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
             <View style={styles.simpleStatDivider} />
 
             <View style={styles.simpleStatItem}>
-              <View
-                style={[
-                  styles.simpleStatIcon,
-                  { backgroundColor: colors.info + "20" },
-                ]}
-              >
-                <FontAwesome6
-                  name="calendar-week"
-                  size={20}
-                  color={colors.info}
-                />
-              </View>
-              <Text style={styles.simpleStatValue}>
+              <Text style={[styles.simpleStatValue, { color: brutalistColors.holiday }]}>
                 {simplifiedStats.holidays}
               </Text>
               <Text style={styles.simpleStatLabel}>Holidays</Text>
             </View>
           </View>
-        </View>
+        </BrutalistCard>
       </Animated.View>
     );
   };
@@ -643,7 +655,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
+        <ActivityIndicator size="large" color={brutalistColors.primary} />
         <Text style={styles.loadingText}>Loading attendance data...</Text>
       </View>
     );
@@ -657,16 +669,15 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         <RefreshControl
           refreshing={false}
           onRefresh={handleRefresh}
-          colors={[colors.primary[500]]}
-          tintColor={colors.primary[500]}
+          colors={[brutalistColors.primary]}
+          tintColor={brutalistColors.primary}
         />
       }
     >
       {renderSimplifiedStatisticsCard()}
 
-      <View style={styles.calendarCard}>
-        <Text style={styles.calendarTitle}>Attendance Calendar</Text>
-
+      <BrutalistCard>
+        <Text style={styles.cardTitle}>ATTENDANCE CALENDAR</Text>
         <Calendar
           current={`${selectedYear}-${String(selectedMonth).padStart(
             2,
@@ -681,39 +692,38 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
           enableSwipeMonths={true}
           hideExtraDays={false}
           disableMonthChange={false}
-          dayComponent={undefined}
         />
-      </View>
+      </BrutalistCard>
 
       {renderSelectedDateInfo()}
 
-      <View style={styles.legendCard}>
-        <Text style={styles.legendTitle}>Legend</Text>
+      <BrutalistCard>
+        <Text style={styles.cardTitle}>LEGEND</Text>
         <View style={styles.legendItems}>
           <View style={styles.legendItem}>
             <View
-              style={[styles.legendDot, { backgroundColor: colors.success }]}
+              style={[styles.legendDot, { backgroundColor: brutalistColors.present }]}
             />
             <Text style={styles.legendText}>Present</Text>
           </View>
           <View style={styles.legendItem}>
             <View
-              style={[styles.legendDot, { backgroundColor: colors.error }]}
+              style={[styles.legendDot, { backgroundColor: brutalistColors.absent }]}
             />
             <Text style={styles.legendText}>Absent</Text>
           </View>
           <View style={styles.legendItem}>
             <View
-              style={[styles.legendDot, { backgroundColor: colors.warning }]}
+              style={[styles.legendDot, { backgroundColor: brutalistColors.inProgress }]}
             />
             <Text style={styles.legendText}>In Progress</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: "#E0E7FF" }]} />
+            <View style={[styles.legendDot, { backgroundColor: brutalistColors.weekend }]} />
             <Text style={styles.legendText}>Weekend</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: "#FEF3C7" }]} />
+            <View style={[styles.legendDot, { backgroundColor: brutalistColors.holiday }]} />
             <Text style={styles.legendText}>Holiday</Text>
           </View>
           {fieldTripDates &&
@@ -724,9 +734,9 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                   style={[
                     styles.legendDot,
                     {
-                      backgroundColor: "#FEF3C7",
-                      borderWidth: 2,
-                      borderColor: "#F59E0B",
+                      backgroundColor: brutalistColors.background,
+                      borderWidth: 3,
+                      borderColor: brutalistColors.fieldTrip,
                     },
                   ]}
                 />
@@ -734,7 +744,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
               </View>
             )}
         </View>
-      </View>
+      </BrutalistCard>
     </ScrollView>
   );
 };
@@ -742,7 +752,8 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.offwhite,
+    paddingTop: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -751,109 +762,86 @@ const styles = StyleSheet.create({
     paddingVertical: 50,
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: colors.gray[600],
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: "700",
+    color: brutalistColors.text,
   },
-  statisticsCard: {
-    margin: 16,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  // Brutalist Card Styling
+  brutalistCardWrapper: {
+    marginHorizontal: 16,
+    marginBottom: 24,
+    backgroundColor: brutalistColors.border,
+    transform: [{ translateX: 6 }, { translateY: 6 }],
   },
-  simpleStatsContainer: {
+  brutalistCard: {
     padding: 20,
+    borderWidth: 3,
+    borderColor: brutalistColors.border,
+    backgroundColor: brutalistColors.background,
   },
-  simpleStatHeader: {
+  headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    borderBottomWidth: 3,
+    borderColor: brutalistColors.border,
+    paddingBottom: 12,
+    marginBottom: 16,
   },
-  simpleStatTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: colors.gray[800],
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: brutalistColors.text,
+    textTransform: "uppercase",
   },
   refreshButton: {
+    borderWidth: 2,
+    borderColor: brutalistColors.border,
     padding: 8,
-    borderRadius: 20,
-    backgroundColor: colors.gray[100],
   },
   simpleStatsGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
     alignItems: "center",
   },
   simpleStatItem: {
-    flex: 1,
     alignItems: "center",
-  },
-  simpleStatIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
+    paddingHorizontal: 8,
   },
   simpleStatValue: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.gray[800],
-    marginBottom: 4,
+    fontSize: 28,
+    fontWeight: "900",
   },
   simpleStatLabel: {
     fontSize: 12,
-    color: colors.gray[600],
+    fontWeight: "600",
+    color: brutalistColors.text,
+    marginTop: 4,
+    textTransform: "uppercase",
   },
   simpleStatDivider: {
-    width: 1,
+    width: 2,
     height: 50,
-    backgroundColor: colors.gray[200],
-  },
-  calendarCard: {
-    backgroundColor: colors.white,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  calendarTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.gray[800],
-    marginBottom: 16,
+    backgroundColor: brutalistColors.border,
   },
   calendar: {
-    borderRadius: 12,
-  },
-  selectedDateCard: {
-    backgroundColor: colors.white,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginTop: 16,
   },
   selectedDateTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: colors.gray[800],
+    fontWeight: "700",
+    color: brutalistColors.text,
     marginBottom: 16,
+    borderBottomWidth: 2,
+    borderColor: brutalistColors.border,
+    paddingBottom: 12,
+  },
+  badgeContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+    flexWrap: "wrap",
   },
   attendanceBadge: {
     flexDirection: "row",
@@ -861,29 +849,38 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignSelf: "flex-start",
+    borderWidth: 2,
+    borderColor: brutalistColors.border,
   },
   attendanceBadgeText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
-  noAttendanceContainer: {
+  noDataContainer: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 24,
   },
-  noAttendanceText: {
-    fontSize: 14,
-    color: colors.gray[500],
+  noDataText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: brutalistColors.text,
     marginTop: 12,
+    textAlign: "center",
+  },
+  noDataSubText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: brutalistColors.text,
+    marginTop: 4,
+    textAlign: "center",
   },
   attendanceDetailsContainer: {
     gap: 12,
     marginTop: 16,
     paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[200],
+    borderTopWidth: 2,
+    borderTopColor: brutalistColors.border,
   },
   attendanceDetailRow: {
     flexDirection: "row",
@@ -892,125 +889,36 @@ const styles = StyleSheet.create({
   },
   attendanceDetailLabel: {
     fontSize: 14,
-    color: colors.gray[600],
-    fontWeight: "500",
+    color: brutalistColors.text,
+    fontWeight: "700",
+    width: 90,
   },
   attendanceDetailValue: {
     fontSize: 14,
-    color: colors.gray[800],
+    color: brutalistColors.text,
+    fontWeight: "500",
     flex: 1,
-  },
-  legendCard: {
-    backgroundColor: colors.white,
-    marginHorizontal: 16,
-    marginBottom: 24,
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  legendTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.gray[800],
-    marginBottom: 12,
   },
   legendItems: {
     flexDirection: "row",
-    justifyContent: "space-around",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 16,
+    marginTop: 12,
   },
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    minWidth: "25%",
   },
   legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 16,
+    height: 16,
+    borderWidth: 2,
+    borderColor: brutalistColors.border,
   },
   legendText: {
     fontSize: 14,
-    color: colors.gray[600],
-  },
-  badgeContainer: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 16,
-    flexWrap: "wrap",
-  },
-  fieldTripBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignSelf: "flex-start",
-  },
-  fieldTripBadgeText: {
-    fontSize: 12,
     fontWeight: "600",
-  },
-  holidayBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignSelf: "flex-start",
-  },
-  holidayBadgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  holidayContainer: {
-    alignItems: "center",
-    paddingVertical: 20,
-    backgroundColor: "#FEF3C7",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#F59E0B",
-  },
-  holidayText: {
-    fontSize: 16,
-    color: "#92400E",
-    fontWeight: "600",
-    marginTop: 12,
-  },
-  holidaySubText: {
-    fontSize: 14,
-    color: "#A16207",
-    marginTop: 4,
-    textAlign: "center",
-  },
-  fieldTripNoAttendanceContainer: {
-    alignItems: "center",
-    paddingVertical: 20,
-    backgroundColor: "#FEF3C7",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#F59E0B",
-  },
-  fieldTripNoAttendanceText: {
-    fontSize: 16,
-    color: "#92400E",
-    fontWeight: "600",
-    marginTop: 12,
-  },
-  fieldTripSubText: {
-    fontSize: 14,
-    color: "#A16207",
-    marginTop: 4,
-    textAlign: "center",
+    color: brutalistColors.text,
   },
 });

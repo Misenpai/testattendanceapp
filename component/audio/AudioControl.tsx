@@ -16,6 +16,7 @@ export function AudioControls({
 }: AudioControlsProps) {
   return (
     <View style={audioStyles.controls}>
+      {/* Play/Pause Button */}
       <Pressable onPress={onPlay} style={audioStyles.playButton}>
         <FontAwesome6
           name={isPlaying ? "pause" : "play"}
@@ -23,8 +24,9 @@ export function AudioControls({
           color="white"
         />
       </Pressable>
+      {/* Delete Button */}
       <Pressable onPress={onDelete} style={audioStyles.deleteButton}>
-        <FontAwesome6 name="trash" size={16} color="white" />
+        <FontAwesome6 name="trash" size={16} color="black" />
       </Pressable>
     </View>
   );

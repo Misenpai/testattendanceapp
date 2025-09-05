@@ -1,4 +1,4 @@
-// component/attendance/AttendanceContainer.tsx
+
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -15,12 +15,14 @@ import { useAuthStore } from "@/store/authStore";
 import { attendanceContainerStyles, globalStyles } from "@/constants/style";
 
 import { BUILDINGS, DEPT_TO_BUILDING, IIT_GUWAHATI_LOCATION } from "@/constants/geofenceLocation";
+import { getCachedHolidays, Holiday } from "@/services/attendanceCalendarService";
 import { AudioRecorder } from "../audio/AudioRecorder";
 import { CameraView } from "../camera/CameraView";
 import { ExpandedMapView } from "../map/ExpandedMapView";
 import { GeofenceMap } from "../map/GeofenceMap";
 import { MapCard } from "../map/MapCard";
 import { LoadingScreen } from "../ui/LoadingScreen";
+import { HolidayScreen } from "./HolidayScreen";
 import { HomeView } from "./HomeView";
 
 type ListItem = { id: string; type: "map" | "attendance" };
@@ -57,11 +59,63 @@ export function AttendanceContainer() {
 
   const [showExpandedMap, setShowExpandedMap] = useState(false);
   const [isMapTouched, setIsMapTouched] = useState(false);
+  const [isHoliday, setIsHoliday] = useState(false);
+  const [holidayInfo, setHolidayInfo] = useState<Holiday | null>(null);
+  const [checkingHoliday, setCheckingHoliday] = useState(true);
 
   const geofence = useGeofence(
     userLocationType,
     isFieldTrip
   );
+
+  
+  useEffect(() => {
+    const checkHolidayStatus = async () => {
+      try {
+        setCheckingHoliday(true);
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        
+        
+        const dayOfWeek = today.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          setIsHoliday(true);
+          setHolidayInfo({
+            date: today.toISOString().split('T')[0],
+            description: dayOfWeek === 0 ? 'Sunday' : 'Saturday',
+            isHoliday: true,
+            isWeekend: true
+          });
+          setCheckingHoliday(false);
+          return;
+        }
+
+        
+        const holidays = await getCachedHolidays(year, month);
+        const todayString = today.toISOString().split('T')[0];
+        const todayHoliday = holidays.find(h => h.date === todayString);
+        
+        if (todayHoliday) {
+          setIsHoliday(true);
+          setHolidayInfo(todayHoliday);
+        } else {
+          setIsHoliday(false);
+          setHolidayInfo(null);
+        }
+      } catch (error) {
+        console.error('Error checking holiday status:', error);
+        setIsHoliday(false);
+        setHolidayInfo(null);
+      } finally {
+        setCheckingHoliday(false);
+      }
+    };
+
+    if (session && userName) {
+      checkHolidayStatus();
+    }
+  }, [session, userName]);
 
   useEffect(() => {
     if (session && userName && !isInitialized) {
@@ -96,9 +150,9 @@ export function AttendanceContainer() {
     return () => subscription?.remove();
   }, [session, userName, checkFieldTripStatus]);
 
-  // ✅ Updated location resolution for field trips
+  
   const resolveAttendanceLocation = () => {
-    // If on field trip, always return field trip location
+    
     if (isFieldTrip || userLocationType === "FIELDTRIP") {
       return "Outside IIT (Field Trip)";
     }
@@ -219,13 +273,19 @@ export function AttendanceContainer() {
     [geofence]
   );
 
-  if (isLoadingUserId) return <LoadingScreen text="Loading..." />;
+  
+  if (isLoadingUserId || checkingHoliday) return <LoadingScreen text="Loading..." />;
   if (isInitialized && !userId)
     return (
       <LoadingScreen text="Please login to continue" subtext="Redirecting..." />
     );
   if (uploading)
     return <LoadingScreen text="Uploading..." subtext="Please wait" />;
+
+  
+  if (isHoliday && holidayInfo) {
+    return <HolidayScreen holidayInfo={holidayInfo} />;
+  }
 
   if (showExpandedMap)
     return (

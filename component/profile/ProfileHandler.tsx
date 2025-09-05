@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React from "react";
+import { Platform, StyleSheet, Text, View } from "react-native";
 
 interface ProfileHeaderProps {
   username?: string;
@@ -9,8 +9,13 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ username }) => {
   return (
     <View style={styles.header}>
       <View style={styles.headerContent}>
-        <Text style={styles.title}>Profile</Text>
-        <Text style={styles.subtitle}>Manage your account settings</Text>
+        {/* Title */}
+        <Text style={styles.headerTitle}>Profile</Text>
+
+        {/* Subtitle */}
+        <Text style={styles.headerSubtitle}>
+          Manage your account settings
+        </Text>
       </View>
     </View>
   );
@@ -18,24 +23,26 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ username }) => {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: '#007AFF',
-    paddingBottom: 30,
-    paddingTop: 60,
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
+    paddingBottom: 20,
+    borderBottomWidth: 3,
+    borderColor: "black",
+    backgroundColor: "#F8F8F8", // offwhite-like
   },
   headerContent: {
-    paddingHorizontal: 20,
-    alignItems: 'center',
+    alignItems: "center",
+    marginTop: 20,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: 'white',
-    letterSpacing: -0.5,
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "900",
+    color: "black",
+    textTransform: "uppercase",
   },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 8,
-    fontWeight: '400',
+  headerSubtitle: {
+    fontSize: 14,
+    color: "black",
+    textAlign: "center",
+    marginTop: 4,
   },
 });

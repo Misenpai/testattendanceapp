@@ -9,9 +9,11 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { AudioRecording } from "../../types/attendance"; // Add this import
 
 interface ActionButtonsProps {
   photos: CameraCapturedPicture[];
+  audioRecording: AudioRecording | null; // Add this prop
   onTakePhotos: () => void;
   onRetakeAll: () => void;
   onUpload: () => void;
@@ -23,6 +25,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function ActionButtons({
   photos,
+  audioRecording, // Add this parameter
   onTakePhotos,
   onRetakeAll,
   onUpload,
@@ -43,28 +46,12 @@ export function ActionButtons({
     scale.value = withSpring(1);
   };
 
-  const isComplete = photos.length === totalPhotos;
+  // Update the completion check to include audio
+  const isComplete = photos.length === totalPhotos && audioRecording !== null;
 
   return (
     <View style={styles.container}>
-      {photos.length === 0 ? (
-        <AnimatedPressable
-          onPress={onTakePhotos}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          style={[styles.primaryButton, animatedStyle]}
-        >
-          <LinearGradient
-            colors={[colors.primary[500], colors.primary[600]]}
-            style={styles.gradientButton}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <FontAwesome6 name="camera" size={20} color={colors.white} />
-            <Text style={styles.primaryButtonText}>Take Photo</Text>
-          </LinearGradient>
-        </AnimatedPressable>
-      ) : (
+      {photos.length > 0 && (
         <View style={styles.buttonGroup}>
           <AnimatedPressable
             onPress={onUpload}
@@ -109,18 +96,12 @@ export function ActionButtons({
         </View>
       )}
 
-      {photos.length > 0 && !isComplete && (
-        <View style={styles.infoCard}>
-          <FontAwesome6 name="circle-info" size={16} color={colors.warning} />
-          <Text style={styles.infoText}>
-            Please capture the required photo to submit attendance
-          </Text>
-        </View>
-      )}
+
     </View>
   );
 }
 
+// Styles remain the same
 const styles = StyleSheet.create({
   container: {
     gap: 12,

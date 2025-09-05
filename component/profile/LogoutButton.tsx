@@ -16,10 +16,7 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({ disabled = false }) 
       'Logout',
       'Are you sure you want to logout?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Logout',
           style: 'destructive',
@@ -33,12 +30,12 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({ disabled = false }) 
   };
 
   return (
-    <TouchableOpacity 
-      style={[styles.logoutButton, disabled && styles.disabled]} 
+    <TouchableOpacity
+      style={[styles.logoutButton, disabled && styles.disabled]}
       onPress={handleLogout}
       disabled={disabled}
     >
-      <FontAwesome6 name="arrow-right-from-bracket" size={18} color="white" />
+      <FontAwesome6 name="arrow-right-from-bracket" size={18} color="#000" />
       <Text style={styles.logoutButtonText}>Sign Out</Text>
     </TouchableOpacity>
   );
@@ -46,27 +43,30 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({ disabled = false }) 
 
 const styles = StyleSheet.create({
   logoutButton: {
-    backgroundColor: '#ef4444',
-    padding: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 20,
     marginBottom: 40,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     flexDirection: 'row',
-    shadowColor: '#ef4444',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#000',
+    backgroundColor: '#ef4444',
+    shadowColor: '#000',
+    shadowOffset: { width: 5, height: 5 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
     elevation: 6,
   },
-  disabled: {
-    opacity: 0.6,
-  },
   logoutButtonText: {
-    color: 'white',
+    color: '#000',
     fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    marginLeft: 10,
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });

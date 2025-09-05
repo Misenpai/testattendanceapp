@@ -1,14 +1,15 @@
+import { colors } from "@/constants/colors";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SvgXml } from "react-native-svg";
 
@@ -21,13 +22,9 @@ interface AvatarPickerProps {
   currentAvatar?: { style: string; seed: string };
 }
 
-// Available DiceBear avatar styles
+// Full DiceBear avatar styles
 const AVATAR_STYLES = [
-  {
-    id: "adventurer",
-    name: "Adventurer",
-    description: "Cartoon-style characters",
-  },
+  { id: "adventurer", name: "Adventurer", description: "Cartoon-style characters" },
   { id: "avataaars", name: "Avataaars", description: "Sketch-style avatars" },
   { id: "big-ears", name: "Big Ears", description: "Characters with big ears" },
   { id: "big-smile", name: "Big Smile", description: "Happy characters" },
@@ -44,7 +41,7 @@ const AVATAR_STYLES = [
   { id: "pixel-art", name: "Pixel Art", description: "8-bit style avatars" },
 ];
 
-// Generate some seed options for variety
+// Full seed options
 const SEED_OPTIONS = [
   "happy",
   "cool",
@@ -67,12 +64,12 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
   currentAvatar,
 }) => {
   const [selectedStyle, setSelectedStyle] = useState(
-    currentAvatar?.style || "adventurer",
+    currentAvatar?.style || "adventurer"
   );
 
   const generateAvatarUrl = (style: string, seed: string) => {
     return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(
-      seed,
+      seed
     )}&size=120`;
   };
 
@@ -105,7 +102,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
         {svgXml ? (
           <SvgXml xml={svgXml} width={60} height={60} />
         ) : (
-          <ActivityIndicator size="small" color="#007AFF" />
+          <ActivityIndicator size="small" color="#000" />
         )}
 
         {isSelected && (
@@ -118,31 +115,22 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <FontAwesome6 name="xmark" size={20} color="#64748b" />
+            <FontAwesome6 name="xmark" size={20} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Choose Avatar</Text>
+          <Text style={styles.headerTitle}>CHOOSE AVATAR</Text>
           <View style={styles.placeholder} />
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Style Selector */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Avatar Style</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.styleSelector}
-            >
+            <Text style={styles.sectionTitle}>AVATAR STYLE</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {AVATAR_STYLES.map((style) => (
                 <TouchableOpacity
                   key={style.id}
@@ -160,9 +148,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
                   >
                     {style.name}
                   </Text>
-                  <Text style={styles.styleDescription}>
-                    {style.description}
-                  </Text>
+                  <Text style={styles.styleDescription}>{style.description}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -170,7 +156,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 
           {/* Avatar Grid */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select Avatar</Text>
+            <Text style={styles.sectionTitle}>SELECT AVATAR</Text>
             <View style={styles.avatarGrid}>
               {SEED_OPTIONS.map((seed) => (
                 <AvatarOption key={seed} style={selectedStyle} seed={seed} />
@@ -186,26 +172,30 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: colors.offwhite,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    paddingTop: 50,
+    paddingBottom: 16,
+    borderBottomWidth: 4,
+    borderColor: "#000",
+    backgroundColor: colors.offwhite,
   },
   closeButton: {
     padding: 8,
+    borderWidth: 3,
+    borderColor: "#000",
+    backgroundColor: "#fff",
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#1e293b",
+    fontWeight: "900",
+    color: "#000",
+    textTransform: "uppercase",
   },
   placeholder: {
     width: 36,
@@ -218,71 +208,79 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1e293b",
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#000",
     marginBottom: 16,
-  },
-  styleSelector: {
-    flexDirection: "row",
+    textTransform: "uppercase",
+    borderBottomWidth: 3,
+    borderColor: "#000",
+    paddingBottom: 6,
   },
   styleOption: {
-    backgroundColor: "white",
-    padding: 16,
+    borderWidth: 3,
+    borderColor: "#000",
+    padding: 12,
     marginRight: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
     minWidth: 140,
+    shadowColor: "#000",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
   },
   selectedStyleOption: {
-    borderColor: "#007AFF",
-    backgroundColor: "#eff6ff",
+    backgroundColor: colors.lightGreen,
   },
   styleName: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 4,
+    fontWeight: "700",
+    color: "#000",
+    textTransform: "uppercase",
   },
   selectedStyleName: {
-    color: "#007AFF",
+    color: colors.black,
   },
   styleDescription: {
     fontSize: 12,
-    color: "#6b7280",
+    color: "#444",
   },
   avatarGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 16,
   },
   avatarOption: {
     width: (screenWidth - 60) / 3,
     aspectRatio: 1,
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 12,
+    backgroundColor: "#fff",
+    borderWidth: 3,
+    borderColor: "#000",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#e5e7eb",
     position: "relative",
+    shadowColor: "#000",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
   },
   selectedAvatarOption: {
-    borderColor: "#007AFF",
-    backgroundColor: "#eff6ff",
+    backgroundColor: colors.lightYellow,
   },
   selectedBadge: {
     position: "absolute",
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#007AFF",
+    backgroundColor: "red",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#000",
   },
 });

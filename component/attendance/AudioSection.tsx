@@ -1,17 +1,16 @@
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import React from "react";
-import { Pressable, Text, View, StyleSheet } from "react-native";
-import { colors } from "@/constants/colors";
-import { AudioRecording } from "../../types/attendance";
-import { AudioPlayer } from "../audio/AudioPlayer";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
+  useSharedValue,
   withRepeat,
   withSequence,
-  withTiming,
-  useSharedValue,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
+import { AudioRecording } from "../../types/attendance";
+import { AudioPlayer } from "../audio/AudioPlayer";
 
 interface AudioSectionProps {
   audioRecording: AudioRecording | null;
@@ -36,6 +35,9 @@ export function AudioSection({
         ),
         -1,
       );
+    } else {
+      // Stop the animation when audio is recorded
+      pulseScale.value = withTiming(1);
     }
   }, [audioRecording]);
 
@@ -48,7 +50,7 @@ export function AudioSection({
   }));
 
   const handlePressIn = () => {
-    buttonScale.value = withSpring(0.95);
+    buttonScale.value = withSpring(0.98);
   };
 
   const handlePressOut = () => {
@@ -58,36 +60,31 @@ export function AudioSection({
   return (
     <View style={styles.container}>
       {audioRecording ? (
-        <View style={styles.recordedCard}>
-          <View style={styles.recordedHeader}>
-            <View style={styles.recordedIconContainer}>
-              <FontAwesome6
-                name="circle-check"
-                size={20}
-                color={colors.success}
-              />
+        <View style={styles.brutalistCard}>
+          <View style={styles.brutalistCardHeader}>
+            <View style={styles.brutalistCardIcon}>
+              <FontAwesome6 name="circle-check" size={24} color="#fff" />
             </View>
-            <Text style={styles.recordedText}>Audio Recorded</Text>
+            <Text style={styles.brutalistCardAlert}>Audio Recorded</Text>
           </View>
-          <AudioPlayer audioRecording={audioRecording} />
+          <View style={styles.brutalistCardMessage}>
+            <AudioPlayer audioRecording={audioRecording} />
+          </View>
         </View>
       ) : (
         <AnimatedPressable
           onPress={onRecordAudio}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          style={[styles.recordButton, buttonStyle]}
+          style={[styles.brutalistCard, buttonStyle]}
         >
-          <Animated.View style={[styles.pulseCircle, pulseStyle]}>
-            <View style={styles.iconCircle}>
-              <FontAwesome6
-                name="microphone"
-                size={24}
-                color={colors.primary[500]}
-              />
-            </View>
-          </Animated.View>
-          <View style={styles.recordTextContainer}>
+          <View style={styles.brutalistCardHeader}>
+            <Animated.View style={[styles.brutalistCardIcon, pulseStyle]}>
+              <FontAwesome6 name="microphone" size={24} color="#fff" />
+            </Animated.View>
+            <Text style={styles.brutalistCardAlert}>Record Audio</Text>
+          </View>
+          <View style={styles.brutalistCardMessage}>
             <Text style={styles.recordButtonText}>Tap to Record</Text>
             <Text style={styles.recordHintText}>
               Say today&apos;s date clearly
@@ -101,65 +98,55 @@ export function AudioSection({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 8,
+    // No specific container styles needed, the card will define its own space
   },
-  recordButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.primary[50],
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: colors.primary[200],
+  brutalistCard: {
+    borderWidth: 4,
+    borderColor: "#000",
+    backgroundColor: "#fff",
+    padding: 24, // 1.5rem equivalent
     borderStyle: "dashed",
   },
-  pulseCircle: {
-    marginRight: 16,
+  brutalistCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16, // 1rem equivalent
+    marginBottom: 16,
+    borderBottomWidth: 2,
+    borderColor: "#000",
+    paddingBottom: 16,
   },
-  iconCircle: {
+  brutalistCardIcon: {
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000",
+    padding: 8, // 0.5rem equivalent
     width: 48,
     height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.white,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: colors.primary[500],
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  recordTextContainer: {
-    flex: 1,
+  brutalistCardAlert: {
+    fontWeight: "900",
+    color: "#000",
+    fontSize: 24, // 1.5rem equivalent
+    textTransform: "uppercase",
+  },
+  brutalistCardMessage: {
+    marginTop: 16,
+    paddingBottom: 16,
   },
   recordButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.gray[800],
-    marginBottom: 2,
+    fontSize: 18,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    color: "#000",
+    marginBottom: 4,
   },
   recordHintText: {
     fontSize: 14,
-    color: colors.gray[500],
-  },
-  recordedCard: {
-    backgroundColor: colors.success + "10",
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.success + "30",
-  },
-  recordedHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  recordedIconContainer: {
-    marginRight: 8,
-  },
-  recordedText: {
-    fontSize: 16,
+    color: "#000",
+    lineHeight: 20,
     fontWeight: "600",
-    color: colors.gray[800],
   },
 });

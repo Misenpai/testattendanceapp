@@ -1,4 +1,3 @@
-import { colors } from "@/constants/colors";
 import { audioRecorderStyles } from "@/constants/style";
 import { useAudio } from "@/hooks/useAudio";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
@@ -89,7 +88,6 @@ export function AudioRecorder({
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-
     // Simulate real-time waveform during recording
     intervalRef.current = setInterval(() => {
       if (waveformRef.current.isRecording) {
@@ -110,6 +108,12 @@ export function AudioRecorder({
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
+    }
+  }, []);
+  const stopWaveformPlayback = useCallback(() => {
+    if (playbackIntervalRef.current) {
+      clearInterval(playbackIntervalRef.current);
+      playbackIntervalRef.current = null;
     }
   }, []);
 
@@ -154,14 +158,7 @@ export function AudioRecorder({
         }
       }
     }, 50); // More frequent updates for smoother playback visualization
-  }, [audio.isPlaying, width]);
-
-  const stopWaveformPlayback = useCallback(() => {
-    if (playbackIntervalRef.current) {
-      clearInterval(playbackIntervalRef.current);
-      playbackIntervalRef.current = null;
-    }
-  }, []);
+  }, [audio.isPlaying, width, stopWaveformPlayback]);
 
   // Effect to handle recording state changes
   useEffect(() => {
@@ -206,7 +203,6 @@ export function AudioRecorder({
   // Effect to track recording duration
   useEffect(() => {
     let durationInterval: number | null = null;
-
     if (audio.recorderState.isRecording) {
       const startTime = Date.now();
       durationInterval = setInterval(() => {
@@ -248,7 +244,6 @@ export function AudioRecorder({
       setHasRecording(false);
       setRecordingDuration(0);
       setPlaybackProgress(0);
-
       await audio.startRecording();
     } catch (error) {
       console.log("Recording start error:", error);
@@ -265,7 +260,6 @@ export function AudioRecorder({
           duration: Math.floor(recordingDuration), // Use the tracked duration
         };
         audio.setCurrentRecording(recordingWithDuration);
-        // The recording state will be handled by the useEffect above
         return recordingWithDuration;
       }
     } catch (error) {
@@ -278,10 +272,8 @@ export function AudioRecorder({
     try {
       if (audio.currentRecording) {
         if (audio.isPlaying) {
-          // Stop playback
           await audio.stopAudio();
         } else {
-          // Start playback
           await audio.playAudio(audio.currentRecording);
         }
       }
@@ -305,7 +297,6 @@ export function AudioRecorder({
 
   const handleComplete = () => {
     if (audio.currentRecording) {
-      // Pass recording with duration
       const recordingWithDuration: AudioRecording = {
         ...audio.currentRecording,
         duration: Math.floor(recordingDuration),
@@ -318,75 +309,25 @@ export function AudioRecorder({
     <View style={audioRecorderStyles.container}>
       {/* Header */}
       <View style={audioRecorderStyles.header}>
-        <Pressable
-          onPress={onBack}
-          style={{
-            padding: 8,
-            borderRadius: 20,
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-        >
-          <FontAwesome6 name="arrow-left" size={24} color="white" />
+        <Pressable onPress={onBack} style={audioRecorderStyles.backButton}>
+          <FontAwesome6 name="arrow-left" size={24} color="black" />
         </Pressable>
         <Text style={audioRecorderStyles.title}>Record Audio</Text>
       </View>
 
-      {/* Date Prompt */}
-      <View
-        style={[
-          audioRecorderStyles.datePrompt,
-          {
-            paddingHorizontal: 20,
-            paddingVertical: 15,
-            backgroundColor: "rgba(0,0,0,0.1)",
-            borderRadius: 10,
-            marginBottom: 20,
-          },
-        ]}
-      >
-        <Text
-          style={[
-            audioRecorderStyles.dateText,
-            {
-              fontSize: 18,
-              fontWeight: "600",
-              textAlign: "center",
-              color: colors.white,
-            },
-          ]}
-        >
-          Read the Text &quot;Today is {getFormattedDate()}&quot;
-        </Text>
-      </View>
-
       <View style={audioRecorderStyles.content}>
+        {/* Date Prompt */}
+        <View style={audioRecorderStyles.datePrompt}>
+          <Text style={audioRecorderStyles.dateText}>
+            Read the Text: &quot;Today is {getFormattedDate()}&quot;
+          </Text>
+        </View>
+
         {/* Waveform Visualization */}
-        <View
-          style={{
-            height: 120,
-            backgroundColor: "rgba(0,0,0,0.05)",
-            borderRadius: 15,
-            marginVertical: 20,
-            display: "flex",
-            flexDirection: "row-reverse",
-            alignItems: "center",
-            overflow: "hidden",
-            paddingHorizontal: 10,
-          }}
-        >
+        <View style={audioRecorderStyles.waveformContainer}>
           <Animated.View
             entering={SlideInRight}
-            style={[
-              {
-                display: "flex",
-                flexDirection: "row",
-                overflow: "hidden",
-                gap: 3,
-                alignItems: "center",
-                minWidth: 50,
-              },
-              waveformStyle,
-            ]}
+            style={[audioRecorderStyles.waveform, waveformStyle]}
           >
             {waveformData.map((amplitude, index) => (
               <Animated.View
@@ -397,12 +338,12 @@ export function AudioRecorder({
                   width: 3,
                   borderRadius: 2,
                   backgroundColor: audio.recorderState.isRecording
-                    ? "#FF6B6B"
+                    ? "#FF3B30" // Brutalist Red
                     : audio.isPlaying
-                      ? "#FF9500" // Orange during playback
-                      : hasRecording
-                        ? "#007AFF"
-                        : "#ccc",
+                    ? "#007AFF" // Brutalist Blue
+                    : hasRecording
+                    ? "#000"
+                    : "#ccc",
                   opacity: audio.isPlaying
                     ? index / waveformData.length <= playbackProgress
                       ? 1
@@ -415,66 +356,34 @@ export function AudioRecorder({
         </View>
 
         {/* Duration Display */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            paddingHorizontal: 20,
-            marginBottom: 10,
-          }}
-        >
-          <Text style={{ color: colors.white, fontSize: 14 }}>
+        <View style={audioRecorderStyles.durationContainer}>
+          <Text style={audioRecorderStyles.durationText}>
             {audio.isPlaying
               ? formatTime(playbackProgress * playbackDuration)
               : "0:00"}
           </Text>
-          <Text style={{ color: colors.white, fontSize: 14 }}>
-            {hasRecording
-              ? formatTime(recordingDuration)
-              : formatTime(recordingDuration)}
+          <Text style={audioRecorderStyles.durationText}>
+            {formatTime(recordingDuration)}
           </Text>
         </View>
 
         {/* Status Indicator */}
-        <View style={audioRecorderStyles.recordingIndicator}>
+        <View style={audioRecorderStyles.statusIndicator}>
           {audio.recorderState.isRecording && (
-            <Animated.View
-              style={[
-                audioRecorderStyles.recordingDot,
-                {
-                  width: 12,
-                  height: 12,
-                  borderRadius: 6,
-                  backgroundColor: "#FF6B6B",
-                  marginRight: 8,
-                },
-              ]}
-            />
+            <Animated.View style={audioRecorderStyles.recordingDot} />
           )}
-          {audio.isPlaying && (
-            <Animated.View
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: "#FF9500",
-                marginRight: 8,
-              }}
-            />
-          )}
-          <Text style={audioRecorderStyles.recordingText}>
+          <Text style={audioRecorderStyles.statusText}>
             {audio.recorderState.isRecording
-              ? `Recording... ${formatTime(recordingDuration)}`
-              : audio.isPlaying
-                ? `Playing... ${formatTime(playbackProgress * playbackDuration)}`
-                : hasRecording
-                  ? "Recording complete"
-                  : "Tap to record"}
+              ? `Recording...`
+              : hasRecording
+              ? "Recording Complete"
+              : "Tap to Record"}
           </Text>
         </View>
+      </View>
 
-        {/* Recording Controls */}
+      {/* Controls */}
+      <View style={audioRecorderStyles.controlsContainer}>
         {!hasRecording ? (
           <Pressable
             onPress={
@@ -483,87 +392,48 @@ export function AudioRecorder({
                 : handleStartRecording
             }
             style={[
-              audioRecorderStyles.recordButton,
-              {
-                position: "absolute",
-                bottom: 60,
-                alignSelf: "center",
-                backgroundColor: audio.recorderState.isRecording
-                  ? "#FF6B6B"
-                  : "#007AFF",
-                width: 80,
-                height: 80,
-                borderRadius: 40,
-                justifyContent: "center",
-                alignItems: "center",
-              },
+              audioRecorderStyles.controlButtonBase,
+              audio.recorderState.isRecording
+                ? audioRecorderStyles.stopButton
+                : audioRecorderStyles.recordButton,
             ]}
           >
             <FontAwesome6
               name={audio.recorderState.isRecording ? "stop" : "microphone"}
-              size={32}
+              size={24}
               color="white"
             />
           </Pressable>
         ) : (
-          /* Playback and Action Controls */
-          <View
-            style={{
-              position: "absolute",
-              bottom: 40,
-              left: 0,
-              right: 0,
-              flexDirection: "row",
-              justifyContent: "space-around",
-              alignItems: "center",
-              paddingHorizontal: 40,
-            }}
-          >
-            {/* Play/Pause Button */}
+          <View style={audioRecorderStyles.playbackControls}>
+            <Pressable
+              onPress={handleRetake}
+              style={[
+                audioRecorderStyles.controlButtonBase,
+                audioRecorderStyles.retakeButton,
+              ]}
+            >
+              <FontAwesome6 name="arrow-rotate-left" size={24} color="black" />
+            </Pressable>
             <Pressable
               onPress={handlePlayRecording}
-              style={{
-                backgroundColor: audio.isPlaying ? "#FF9500" : "#34C759",
-                width: 60,
-                height: 60,
-                borderRadius: 30,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
+              style={[
+                audioRecorderStyles.controlButtonBase,
+                audioRecorderStyles.playPauseButton,
+              ]}
             >
               <FontAwesome6
                 name={audio.isPlaying ? "pause" : "play"}
                 size={24}
-                color="white"
+                color="black"
               />
             </Pressable>
-
-            {/* Retake Button */}
-            <Pressable
-              onPress={handleRetake}
-              style={{
-                backgroundColor: "#FF6B6B",
-                width: 60,
-                height: 60,
-                borderRadius: 30,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <FontAwesome6 name="arrow-rotate-left" size={24} color="white" />
-            </Pressable>
-
-            {/* Complete Button */}
             <Pressable
               onPress={handleComplete}
-              style={{
-                backgroundColor: "#007AFF",
-                width: 60,
-                height: 60,
-                borderRadius: 30,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
+              style={[
+                audioRecorderStyles.controlButtonBase,
+                audioRecorderStyles.completeButton,
+              ]}
             >
               <FontAwesome6 name="check" size={24} color="white" />
             </Pressable>

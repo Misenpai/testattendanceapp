@@ -7,22 +7,22 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-    Dimensions,
-    Modal,
-    Platform,
-    Pressable,
-    StatusBar,
-    StyleSheet,
-    Text,
-    View,
+  Dimensions,
+  Modal,
+  Platform,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import Animated, {
-    FadeIn,
-    SlideInUp,
-    ZoomIn,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
+  FadeIn,
+  SlideInUp,
+  ZoomIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from 'react-native-reanimated';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -30,7 +30,6 @@ const { width: screenWidth } = Dimensions.get('window');
 interface PhotoPreviewModalProps {
   visible: boolean;
   photo: CameraCapturedPicture | null;
-  position: 'front' | 'left' | 'right';
   photoNumber: number;
   onKeep: () => void;
   onRetake: () => void;
@@ -41,7 +40,6 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function PhotoPreviewModal({
   visible,
   photo,
-  position,
   photoNumber,
   onKeep,
   onRetake,
@@ -71,19 +69,6 @@ export function PhotoPreviewModal({
     setTimeout(onRetake, 100);
   };
 
-  const getPositionLabel = () => {
-    switch (position) {
-      case 'front':
-        return 'Front Face';
-      case 'left':
-        return 'Left Profile';
-      case 'right':
-        return 'Right Profile';
-      default:
-        return '';
-    }
-  };
-
   if (!visible || !photo) return null;
 
   return (
@@ -110,11 +95,11 @@ export function PhotoPreviewModal({
             </View>
             <View style={styles.positionBadge}>
               <FontAwesome6 
-                name={position === 'front' ? 'user' : 'user-large'} 
+                name="user" 
                 size={14} 
                 color={colors.white} 
               />
-              <Text style={styles.positionText}>{getPositionLabel()}</Text>
+              <Text style={styles.positionText}>Front Face</Text>
             </View>
           </View>
 

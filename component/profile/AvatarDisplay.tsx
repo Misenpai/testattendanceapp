@@ -1,3 +1,4 @@
+import { colors } from "@/constants/colors";
 import React, { useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { WebView } from "react-native-webview";
@@ -10,10 +11,11 @@ interface AvatarDisplayProps {
 
 export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
   avatarUrl,
-  size = 100,
-  style,
+  size = 120,
 }) => {
   const [loading, setLoading] = useState(true);
+
+  const borderWidth = 2;
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -28,32 +30,40 @@ export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
             align-items: center;
             justify-content: center;
             background: transparent;
-            width: ${size}px;
-            height: ${size}px;
+            width: 100%;
+            height: 100%;
           }
           img {
-            width: ${size}px;
-            height: ${size}px;
-            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
           }
         </style>
       </head>
       <body>
         <img src="${avatarUrl}" alt="Avatar" />
       </body>
-    </html>
-  `;
+    </html>`;
 
   return (
-    <View style={[styles.container, { width: size, height: size }, style]}>
+    <View
+      style={[
+        styles.container,
+        {
+          width: size,
+          height: size,
+          borderWidth: borderWidth,
+        },
+      ]}
+    >
       {loading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#007AFF" />
+          <ActivityIndicator size="small" color="#000" />
         </View>
       )}
       <WebView
         source={{ html: htmlContent }}
-        style={[styles.webview, { width: size, height: size }]}
+        style={styles.webview}
         onLoadEnd={() => setLoading(false)}
         scrollEnabled={false}
         showsHorizontalScrollIndicator={false}
@@ -65,12 +75,22 @@ export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 50,
+    borderColor: "#000000",
+    backgroundColor: "#ffffff",
     overflow: "hidden",
     position: "relative",
+
+    // ✅ Cross-platform shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   webview: {
+    flex: 1,
     backgroundColor: "transparent",
+    
   },
   loadingContainer: {
     position: "absolute",
@@ -80,8 +100,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f0f0f0",
-    borderRadius: 50,
+    backgroundColor: colors.offwhite,
     zIndex: 1,
   },
 });

@@ -14,14 +14,14 @@ import { AudioRecording } from "../types/attendance";
 export function useAudio() {
   const [audioPermission, setAudioPermission] = useState<boolean>(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentRecording, setCurrentRecording] =
-    useState<AudioRecording | null>(null);
+  const [currentRecording, setCurrentRecording] = useState<AudioRecording | null>(null);
+  const [shouldPlay, setShouldPlay] = useState(false); // New: Flag for deferred play
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder);
-  
-  // Create a new audio player instance when currentRecording changes
-  const audioPlayer = useAudioPlayer(currentRecording?.uri || "");
+
+  // Player: Use undefined if no URI to avoid invalid empty string
+  const audioPlayer = useAudioPlayer(currentRecording?.uri ?? undefined);
   const playerStatus = useAudioPlayerStatus(audioPlayer);
 
   useEffect(() => {
@@ -39,35 +39,47 @@ export function useAudio() {
     })();
   }, []);
 
-  // Listen to audio player status changes
+  // Update isPlaying from status
   useEffect(() => {
-    if (playerStatus) {
-      if (playerStatus.isLoaded) {
-        setIsPlaying(playerStatus.playing || false);
-        
-        // Handle playback completion
-        if (playerStatus.didJustFinish) {
-          setIsPlaying(false);
-          // Reset player position to beginning for next playback
-          audioPlayer.seekTo(0);
-        }
+    if (playerStatus?.isLoaded) {
+      setIsPlaying(playerStatus.playing || false);
+      // Handle completion
+      if (playerStatus.didJustFinish) {
+        setIsPlaying(false);
+        audioPlayer.seekTo(0);
       }
     }
   }, [playerStatus, audioPlayer]);
+
+  // New: Effect to handle deferred playback when loaded
+  useEffect(() => {
+    if (shouldPlay && playerStatus?.isLoaded && !isPlaying) {
+      (async () => {
+        try {
+          // Reset if at end
+          if (playerStatus.currentTime >= (playerStatus.duration || 0)) {
+            await audioPlayer.seekTo(0);
+          }
+          await audioPlayer.play();
+          setShouldPlay(false); // Clear flag
+        } catch (error) {
+          console.error("Deferred playback error:", error);
+          setShouldPlay(false);
+        }
+      })();
+    }
+  }, [shouldPlay, playerStatus, isPlaying, audioPlayer]);
 
   const startRecording = async () => {
     if (!audioPermission) {
       Alert.alert("Error", "Microphone permission not granted");
       return;
     }
-
     try {
-      // Stop any playing audio before recording
-      if (audioPlayer && isPlaying) {
-        audioPlayer.pause();
-        setIsPlaying(false);
+      // Stop any playing audio
+      if (isPlaying) {
+        await stopAudio();
       }
-
       await audioRecorder.prepareToRecordAsync();
       audioRecorder.record();
     } catch (error) {
@@ -97,30 +109,26 @@ export function useAudio() {
       Alert.alert("Error", "No valid recording found");
       return;
     }
-
     try {
-      // Ensure we have the latest recording set
-      if (currentRecording?.uri !== recording.uri) {
-        setCurrentRecording(recording);
-        // Wait a bit for the audio player to initialize with new URI
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      const isSameRecording = currentRecording?.uri === recording.uri;
 
-      if (audioPlayer) {
-        // If already playing, pause
-        if (isPlaying) {
-          audioPlayer.pause();
-          setIsPlaying(false);
-        } else {
-          // Before playing, check if we're at the end and reset if needed
-          if (playerStatus?.isLoaded && playerStatus.currentTime >= (playerStatus.duration || 0)) {
-            audioPlayer.seekTo(0);
-            await new Promise(resolve => setTimeout(resolve, 100));
+      if (isPlaying) {
+        // Toggle: Pause if playing
+        await stopAudio();
+      } else {
+        if (!isSameRecording) {
+          // Change source: Set recording and request play (deferred)
+          setCurrentRecording(recording);
+          setShouldPlay(true);
+        } else if (playerStatus?.isLoaded) {
+          // Same source and loaded: Play immediately
+          if (playerStatus.currentTime >= (playerStatus.duration || 0)) {
+            await audioPlayer.seekTo(0);
           }
-          
-          // Start playback
           await audioPlayer.play();
-          setIsPlaying(true);
+        } else {
+          // Not loaded yet: Defer
+          setShouldPlay(true);
         }
       }
     } catch (error) {
@@ -132,10 +140,9 @@ export function useAudio() {
 
   const stopAudio = async () => {
     try {
-      if (audioPlayer && isPlaying) {
-        audioPlayer.pause();
-        // Reset to beginning
-        audioPlayer.seekTo(0);
+      if (isPlaying && playerStatus?.isLoaded) {
+        await audioPlayer.pause();
+        await audioPlayer.seekTo(0);
         setIsPlaying(false);
       }
     } catch (error) {
@@ -155,12 +162,12 @@ export function useAudio() {
             text: "Delete",
             style: "destructive",
             onPress: async () => {
-              // Stop playback if active
               if (isPlaying) {
                 await stopAudio();
               }
               setCurrentRecording(null);
               setIsPlaying(false);
+              setShouldPlay(false); // Clear flag
               resolve();
             },
           },
@@ -169,7 +176,7 @@ export function useAudio() {
     });
   };
 
-    const requestPermission = async () => {
+  const requestPermission = async () => {
     const { granted } = await AudioModule.requestRecordingPermissionsAsync();
     setAudioPermission(granted);
     return granted;
@@ -183,9 +190,9 @@ export function useAudio() {
     startRecording,
     stopRecording,
     playAudio,
-    stopAudio, // Add this missing method
+    stopAudio,
     deleteRecording,
     setCurrentRecording,
-    requestPermission
+    requestPermission,
   };
 }

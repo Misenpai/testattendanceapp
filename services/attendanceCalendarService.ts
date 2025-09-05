@@ -99,11 +99,16 @@ export const getAttendanceCalendar = async (
   }
 };
 // Marked dates helper for calendar UI
+
 export const getMarkedDates = (
   attendanceDates: AttendanceDate[],
   holidays: Holiday[]
 ) => {
   const marked: { [key: string]: any } = {};
+  
+  // Get current hour to check if it's after 11 PM
+  const currentHour = new Date().getHours();
+  const today = new Date().toISOString().split('T')[0];
   
   // 1. Attendance entries - simplified color scheme
   attendanceDates.forEach((item) => {
@@ -111,11 +116,18 @@ export const getMarkedDates = (
     let dotColor = '#9CA3AF'; // Gray for absent
     let backgroundColor = '#F3F4F6';
     let textColor = '#1F2937';
+    
 
     if (item.present === 1) {
       if (item.attendance) {
-        if (!item.attendance.isCheckout) {
-          // In Progress (not checked out)
+        // Special handling for today's attendance after 11 PM
+        if (dateStr === today && currentHour >= 23 && !item.attendance.isCheckout) {
+          // After 11 PM, show as Present even if not checked out
+          dotColor = '#10B981'; // Success
+          backgroundColor = '#D1FAE5';
+          textColor = '#065F46';
+        } else if (!item.attendance.isCheckout) {
+          // Before 11 PM or other days - show as In Progress
           dotColor = '#F59E0B'; // Warning
           backgroundColor = '#FEF3C7';
           textColor = '#92400E';
@@ -127,6 +139,7 @@ export const getMarkedDates = (
         }
       }
     }
+    
 
     marked[dateStr] = {
       marked: true,

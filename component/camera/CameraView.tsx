@@ -6,7 +6,7 @@ import {
 } from "expo-camera";
 import { Image } from "expo-image";
 import { FlipType, manipulateAsync, SaveFormat } from "expo-image-manipulator";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Platform,
   Pressable,
@@ -16,16 +16,12 @@ import {
   View,
 } from "react-native";
 import Animated, {
-  SlideInDown,
-  SlideOutDown,
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
 
 import { colors } from "@/constants/colors";
-import { useAttendanceStore } from "@/store/attendanceStore";
 import { CameraControls } from "./CameraControl";
-import { SelfieInstructions } from "./SelfieInstructions";
 
 interface CameraViewProps {
   camera: any;
@@ -47,18 +43,9 @@ export function CameraView({
   const [capturedPhoto, setCapturedPhoto] =
     useState<CameraCapturedPicture | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(true);
   const [isCapturing, setIsCapturing] = useState(false);
 
   const shutterOpacity = useSharedValue(0);
-
-  const currentPosition =
-    useAttendanceStore((s) => s.currentSessionPhotoPosition) || "front";
-
-  useEffect(() => {
-    const t = setTimeout(() => setShowInstructions(false), 5000);
-    return () => clearTimeout(t);
-  }, [currentPhotoIndex]);
 
   const shutterAnimatedStyle = useAnimatedStyle(() => ({
     opacity: shutterOpacity.value,
@@ -110,47 +97,6 @@ export function CameraView({
     setShowPreview(false);
   };
 
-  const toggleInstructions = () => setShowInstructions((v) => !v);
-
-  const getPositionText = () => {
-    switch (currentPosition) {
-      case "front":
-        return "Face Forward";
-      case "left":
-        return "Turn Left";
-      case "right":
-        return "Turn Right";
-      default:
-        return "Face Forward";
-    }
-  };
-
-  const getPositionIcon = () => {
-    switch (currentPosition) {
-      case "front":
-        return "user";
-      case "left":
-        return "angle-left";
-      case "right":
-        return "angle-right";
-      default:
-        return "user";
-    }
-  };
-
-  const getPositionLabel = () => {
-    switch (currentPosition) {
-      case "front":
-        return "Front Face";
-      case "left":
-        return "Left Profile";
-      case "right":
-        return "Right Profile";
-      default:
-        return "Front Face";
-    }
-  };
-
   // If showing preview, render the preview screen
   if (showPreview && capturedPhoto) {
     return (
@@ -163,22 +109,22 @@ export function CameraView({
           </Text>
         </View>
 
-        {/* Photo Display with platform-specific mirror fix */}
+        {/* Photo Display */}
         <View style={styles.photoDisplayContainer}>
           <Image
             source={{ uri: capturedPhoto.uri }}
-            style={styles.photoDisplay} // Remove the Platform.OS === 'ios' && camera.facing === 'front' && styles.mirrorFix condition
+            style={styles.photoDisplay}
             contentFit="cover"
           />
 
           {/* Position Badge */}
           <View style={styles.positionBadge}>
             <FontAwesome6
-              name={getPositionIcon()}
+              name="user"
               size={16}
               color={colors.white}
             />
-            <Text style={styles.positionBadgeText}>{getPositionLabel()}</Text>
+            <Text style={styles.positionBadgeText}>Front Face</Text>
           </View>
 
           {/* Photo Info */}
@@ -218,7 +164,7 @@ export function CameraView({
     );
   }
 
-  // Camera View with all original features
+  // Camera View
   return (
     <View style={styles.container}>
       {/* Camera feed */}
@@ -231,7 +177,7 @@ export function CameraView({
         responsiveOrientationWhenOrientationLocked
       />
 
-      {/* Shutter flash overlay - removed but keeping for structure */}
+      {/* Shutter flash overlay */}
       <Animated.View
         style={[styles.shutterEffect, shutterAnimatedStyle]}
         pointerEvents="none"
@@ -239,16 +185,6 @@ export function CameraView({
 
       {/* Controls & Overlays */}
       <View style={styles.overlayContainer}>
-        {/* Quick tips */}
-        <View style={styles.quickTips}>
-          <Text style={styles.quickTipText}>
-            {currentPosition === "front"
-              ? "📷 Look straight at camera"
-              : currentPosition === "left"
-                ? "👉 Turn head to your right"
-                : "👈 Turn head to your left"}
-          </Text>
-        </View>
 
         {/* Top Controls */}
         <View style={styles.topControls}>
@@ -260,13 +196,11 @@ export function CameraView({
             <Text style={styles.counterText}>
               {retakeMode
                 ? `Retaking Photo`
-                : `Today's Photo: ${getPositionLabel()}`}
+                : `Front Face`}
             </Text>
           </View>
 
-          <Pressable onPress={toggleInstructions} style={styles.helpButton}>
-            <FontAwesome6 name="circle-question" size={24} color="white" />
-          </Pressable>
+          <View style={styles.helpButton} />
         </View>
 
         {/* Face Guide */}
@@ -279,30 +213,14 @@ export function CameraView({
 
             <View style={styles.positionIndicator}>
               <FontAwesome6
-                name={getPositionIcon()}
+                name="user"
                 size={30}
                 color="rgba(255,255,255,0.5)"
               />
-              <Text style={styles.positionText}>{getPositionText()}</Text>
+              <Text style={styles.positionText}>Face Forward</Text>
             </View>
           </View>
         </View>
-
-        {/* Instructions Modal - Updated with onClose prop */}
-        {showInstructions && (
-          <Animated.View
-            entering={SlideInDown.duration(300)}
-            exiting={SlideOutDown}
-            style={styles.instructionsOverlay}
-          >
-            <SelfieInstructions
-              position={currentPosition}
-              photoNumber={currentPhotoIndex + 1}
-              totalPhotos={totalPhotos}
-              onClose={() => setShowInstructions(false)}
-            />
-          </Animated.View>
-        )}
 
         {/* Bottom shutter button */}
         <View style={styles.bottomControls}>
@@ -321,7 +239,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "white",
     zIndex: 999,
-    opacity: 0, // Keep it invisible since animation is removed
+    opacity: 0,
   },
   overlayContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -344,9 +262,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   helpButton: {
-    backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 12,
-    borderRadius: 20,
+    width: 44, // Same width as backButton to maintain layout
   },
   counterOverlay: {
     backgroundColor: "rgba(0,0,0,0.7)",
@@ -358,17 +274,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: "600",
-  },
-  quickTips: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 100 : (StatusBar.currentHeight || 30) + 60,
-    alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    zIndex: 11,
-    marginTop: 60,
   },
   quickTipText: {
     color: colors.white,
@@ -432,10 +337,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 8,
   },
-  instructionsOverlay: {
-    ...StyleSheet.absoluteFillObject, // Updated to cover full screen for centering
-    zIndex: 5,
-  },
   bottomControls: {
     position: "absolute",
     bottom: 20,
@@ -477,9 +378,6 @@ const styles = StyleSheet.create({
   photoDisplay: {
     width: "100%",
     height: "100%",
-  },
-  mirrorFix: {
-    transform: [{ scaleX: -1 }],
   },
   positionBadge: {
     position: "absolute",

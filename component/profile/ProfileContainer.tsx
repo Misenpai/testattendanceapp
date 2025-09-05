@@ -51,11 +51,10 @@ export const ProfileContainer: React.FC = () => {
               </View>
             )}
             <View style={styles.editOverlay}>
-              <FontAwesome6 name="camera" size={16} color="white" />
+              <FontAwesome6 name="camera" size={14} color="#fff" />
             </View>
           </TouchableOpacity>
           <View style={styles.text}>
-            <Text style={styles.welcomeText}>Welcome back!</Text>
             <Text style={styles.usernameText}>{profile.username}</Text>
           </View>
         </View>
@@ -64,22 +63,22 @@ export const ProfileContainer: React.FC = () => {
         <TouchableOpacity 
           style={styles.attendanceCard}
           onPress={() => setShowCalendar(!showCalendar)}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
         >
           <View style={styles.attendanceCardHeader}>
             <View style={styles.attendanceCardLeft}>
-              <FontAwesome6 name="calendar-days" size={24} color={colors.primary[500]} />
+              <FontAwesome6 name="calendar-days" size={20} color="#000" />
               <View style={styles.attendanceCardTextContainer}>
-                <Text style={styles.attendanceCardTitle}>Attendance Tracker</Text>
+                <Text style={styles.attendanceCardTitle}>ATTENDANCE TRACKER</Text>
                 <Text style={styles.attendanceCardSubtitle}>
-                  Tap to {showCalendar ? 'hide' : 'view'} your attendance history
+                  Tap to {showCalendar ? 'HIDE' : 'VIEW'} your attendance history
                 </Text>
               </View>
             </View>
             <FontAwesome6 
               name={showCalendar ? "chevron-up" : "chevron-down"} 
-              size={16} 
-              color={colors.gray[500]} 
+              size={14} 
+              color="#000" 
             />
           </View>
         </TouchableOpacity>
@@ -93,31 +92,31 @@ export const ProfileContainer: React.FC = () => {
 
         {/* Profile Fields Card */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Personal Information</Text>
+          <Text style={styles.cardTitle}>PERSONAL INFORMATION</Text>
           
           <ProfileField 
-            label="Username" 
+            label="USERNAME" 
             value={profile.username} 
             isReadOnly 
             icon="user"
           />
           
           <ProfileField 
-            label="Employee Number" 
+            label="EMPLOYEE NUMBER" 
             value={profile.employeeNumber} 
             isReadOnly 
             icon="id-card"
           />
 
           <ProfileField 
-            label="Employee Class" 
+            label="EMPLOYEE CLASS" 
             value={profile.empClass || 'PJ'} 
             isReadOnly 
             icon="briefcase"
           />
 
           <ProfileField 
-            label="Department" 
+            label="DEPARTMENT" 
             value={department} 
             isReadOnly 
             icon="building"
@@ -126,10 +125,10 @@ export const ProfileContainer: React.FC = () => {
           {/* Show Projects */}
           {projects.length > 0 && (
             <View style={styles.projectsSection}>
-              <Text style={styles.projectsLabel}>PROJECTS</Text>
+              <Text style={styles.projectsLabel}>PROJECT ID</Text>
               {projects.map((project, index) => (
                 <View key={index} style={styles.projectItem}>
-                  <FontAwesome6 name="folder" size={14} color={colors.gray[500]} />
+                  <FontAwesome6 name="folder" size={12} color="#000" />
                   <Text style={styles.projectText}>{project.projectCode}</Text>
                 </View>
               ))}
@@ -158,7 +157,7 @@ export const ProfileContainer: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: colors.offwhite,
   },
   content: {
     padding: 20,
@@ -167,64 +166,62 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
     paddingVertical: 20,
+    borderBottomWidth: 3,
+    borderColor: '#000',
   },
   avatarContainer: {
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    borderWidth: 2,
+    borderColor: '#000',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 2,
+    elevation: 2,
     position: 'relative',
   },
   avatar: {
     width: 100,
     height: 100,
-    borderRadius: 50,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
   },
   avatarText: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: 'white',
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#fff',
   },
   editOverlay: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#007AFF',
+    bottom: -6,
+    right: -6,
+    width: 28,
+    height: 28,
+    backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: 'white',
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: '#64748b',
-    marginBottom: 4,
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   usernameText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1e293b',
+    marginTop: 12,
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#000',
+    textTransform: 'uppercase',
   },
   attendanceCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
+    borderWidth: 3,
+    borderColor: '#000',
+    backgroundColor: '#fff',
+    padding: 16,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: colors.primary[100],
+    shadowOffset: { width: 5, height: 5 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 5,
   },
   attendanceCardHeader: {
     flexDirection: 'row',
@@ -237,69 +234,73 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   attendanceCardTextContainer: {
-    marginLeft: 16,
+    marginLeft: 12,
     flex: 1,
   },
   attendanceCardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#000',
     marginBottom: 4,
   },
   attendanceCardSubtitle: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 12,
+    color: '#000',
+    fontWeight: '600',
   },
   calendarSection: {
     marginTop: -10,
     marginBottom: 20,
   },
   card: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
+    borderWidth: 3,
+    borderColor: '#000',
+    backgroundColor: '#fff',
+    padding: 16,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 5, height: 5 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 5,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 16,
-  },
-  text: {
-    marginTop: 20,
-    alignItems: 'center',
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#000',
+    marginBottom: 12,
+    textTransform: 'uppercase',
   },
   projectsSection: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[200],
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 2,
+    borderTopColor: '#000',
   },
   projectsLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#000',
     marginBottom: 8,
-    letterSpacing: 0.5,
   },
   projectItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: colors.gray[50],
-    borderRadius: 8,
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 2,
+    borderColor: '#000',
+    backgroundColor: '#fff',
     marginBottom: 6,
   },
   projectText: {
-    fontSize: 14,
-    color: colors.gray[700],
+    fontSize: 12,
+    color: '#000',
+    fontWeight: '700',
+  },
+  text: {
+    marginTop: 10,
+    alignItems: 'center',
   },
 });
