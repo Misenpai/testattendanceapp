@@ -1,4 +1,3 @@
-
 import { colors } from "@/constants/colors";
 import { checkoutAttendance } from "@/services/attendanceService";
 import { useAuthStore } from "@/store/authStore";
@@ -33,17 +32,15 @@ interface HomeViewProps {
   todayAttendanceMarked?: boolean;
 }
 
-
 const brutalistColors = {
   black: "#000000",
   white: "#FFFFFF",
-  error: "#dc2626", 
-  success: "#16a34a", 
-  warning: "#f97316", 
+  error: "#dc2626",
+  success: "#16a34a",
+  warning: "#f97316",
   gray: "#a1a1aa",
   lightGray: "#f4f4f5",
 };
-
 
 function SessionTimeIndicator() {
   const [currentSession, setCurrentSession] = useState<
@@ -57,12 +54,9 @@ function SessionTimeIndicator() {
       const minutes = now.getMinutes();
       const timeInMinutes = hours * 60 + minutes;
 
-      
       if (timeInMinutes >= 570 && timeInMinutes < 780) {
         setCurrentSession("FORENOON");
-      }
-      
-      else if (timeInMinutes >= 780 && timeInMinutes <= 1050) {
+      } else if (timeInMinutes >= 780 && timeInMinutes <= 1050) {
         setCurrentSession("AFTERNOON");
       } else {
         setCurrentSession("OUTSIDE");
@@ -70,7 +64,7 @@ function SessionTimeIndicator() {
     };
 
     updateSession();
-    const interval = setInterval(updateSession, 60000); 
+    const interval = setInterval(updateSession, 60000);
 
     return () => clearInterval(interval);
   }, []);
@@ -106,7 +100,6 @@ function SessionTimeIndicator() {
     </View>
   );
 }
-
 
 function CheckoutButton({
   onCheckout,
@@ -160,7 +153,6 @@ function CheckoutButton({
     </Pressable>
   );
 }
-
 
 function AttendanceStatusCard({ attendance }: { attendance: any }) {
   const currentHour = new Date().getHours();
@@ -259,7 +251,6 @@ function AttendanceStatusCard({ attendance }: { attendance: any }) {
   );
 }
 
-
 function AttendanceMarkedCard({
   todayRecord,
   onCheckout,
@@ -345,6 +336,7 @@ export function HomeView({
     refreshAttendanceStatus();
   }, []);
 
+  // In component/attendance/HomeView.tsx, update handleCheckout:
   const handleCheckout = async () => {
     Alert.alert(
       "CHECKOUT CONFIRMATION",
@@ -355,12 +347,12 @@ export function HomeView({
           text: "CHECKOUT",
           onPress: async () => {
             try {
-              const { userName } = useAuthStore.getState();
-              if (!userName) {
+              const { employeeNumber } = useAuthStore.getState(); // Changed from userName
+              if (!employeeNumber) {
                 Alert.alert("Error", "Please login to checkout");
                 return;
               }
-              const result = await checkoutAttendance(userName);
+              const result = await checkoutAttendance(employeeNumber); // Pass employeeNumber
               if (result.success) {
                 Alert.alert("Success", "Checkout successful!");
                 await useAttendanceStore
@@ -646,7 +638,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.offwhite,
   },
-  
+
   brutalistCard: {
     borderWidth: 4,
     borderColor: brutalistColors.black,
@@ -657,7 +649,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 10, height: 10 },
     shadowOpacity: 1,
     shadowRadius: 0,
-    elevation: 10, 
+    elevation: 10,
   },
   headerCard: {
     margin: 16,

@@ -43,7 +43,7 @@ export interface Photo {
 }
 
 export interface AttendanceProps {
-  userId: string;
+  employeeNumber: string;
   photos: Photo[];
   audioRecording?: AudioRecording;
   location?: string | null;

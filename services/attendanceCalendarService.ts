@@ -12,7 +12,7 @@ export interface AttendanceDate {
     takenLocation: string | null;
     checkinTime: string | null;
     checkoutTime: string | null;
-    sessionType?: 'FN' | 'AF';
+    sessionType?: "FN" | "AF";
     fullDay: boolean;
     halfDay: boolean;
     isCheckout: boolean;
@@ -39,62 +39,106 @@ const createApiClient = () => {
     baseURL: API_BASE,
     timeout: 10000,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...authHeaders,
     },
   });
 };
 // Holidays: fetch from /calendar API and cache (per month/year)
-export const getCachedHolidays = async (year: number, month: number): Promise<Holiday[]> => {
+// In attendanceCalendarService.ts:
+export const getCachedHolidays = async (
+  year: number,
+  month: number
+): Promise<Holiday[]> => {
   const cacheKey = `cached_holidays_${year}_${month}`;
   try {
-    // 1. Try local cache first
     const cached = await AsyncStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached) as Holiday[];
-    // 2. Not cached → fetch from backend using /calendar?year=&month=
+
     const apiClient = createApiClient();
-    const { data } = await apiClient.get<{ success: boolean; data: { entries: any[] } }>('/calendar', {
-      params: { year, month }
+    const { data } = await apiClient.get<{
+      success: boolean;
+      data: { entries: any[] };
+    }>("/calendar", {
+      params: { year, month },
     });
-    // 3. Map to Holiday interface
+
+    // Map holidays with correct date format
     const holidays: Holiday[] = data.data.entries.map((entry) => ({
-      date: entry.date.split('T')[0],
+      date: entry.date.split("T")[0], // Normalize to YYYY-MM-DD
       description: entry.description,
       isHoliday: entry.isHoliday,
       isWeekend: entry.isWeekend,
     }));
-    // 4. Persist and return
+
     await AsyncStorage.setItem(cacheKey, JSON.stringify(holidays));
     return holidays;
   } catch (error) {
-    console.error('Error loading holidays:', error);
-    return []; // No static fallback
+    console.error("Error loading holidays:", error);
+    return [];
   }
 };
 // Attendance calendar
+// Update getAttendanceCalendar function:
 export const getAttendanceCalendar = async (
   employeeNumber: string,
   year?: number,
   month?: number
-): Promise<{ success: boolean; data?: { dates: AttendanceDate[]; statistics: AttendanceStatistics }; error?: string }> => {
+): Promise<{
+  success: boolean;
+  data?: { attendances: AttendanceDate[]; statistics: AttendanceStatistics };
+  error?: string;
+}> => {
   try {
     const params: any = {};
     if (year) params.year = year;
     if (month) params.month = month;
-    const apiClient = createApiClient();
-    const { data } = await apiClient.get(`/attendance/calendar/${employeeNumber}`, {
-      params,
-    });
 
-    return {
-      success: data.success,
-      data: data.data, // Backend returns { attendances, statistics }, remapped in component
-    };
+    const apiClient = createApiClient();
+    const { data } = await apiClient.get(
+      `/attendance/calendar/${employeeNumber}`,
+      {
+        params,
+      }
+    );
+
+    if (data.success && data.data) {
+      // Direct mapping - backend already returns the correct structure
+      const mappedAttendances: AttendanceDate[] = data.data.attendances.map(
+        (att: any) => ({
+          date: att.date.split("T")[0], // Normalize date to YYYY-MM-DD
+          present: 1, // If record exists, user was present
+          absent: 0,
+          attendance: {
+            takenLocation: att.takenLocation,
+            checkinTime: att.checkinTime,
+            checkoutTime: att.checkoutTime,
+            sessionType: att.sessionType, // Keep as 'FN' or 'AF'
+            fullDay: att.attendanceType === "FULL_DAY",
+            halfDay: att.attendanceType === "HALF_DAY",
+            isCheckout: !!att.checkoutTime,
+          },
+        })
+      );
+
+      return {
+        success: true,
+        data: {
+          attendances: mappedAttendances,
+          statistics: data.data.statistics,
+        },
+      };
+    }
+
+    return { success: false, error: "No data received" };
   } catch (error: any) {
-    console.error('Get attendance calendar error:', error);
+    console.error("Get attendance calendar error:", error);
     return {
       success: false,
-      error: error.response?.data?.error || error.message || 'Failed to fetch attendance calendar',
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to fetch attendance calendar",
     };
   }
 };
@@ -105,41 +149,43 @@ export const getMarkedDates = (
   holidays: Holiday[]
 ) => {
   const marked: { [key: string]: any } = {};
-  
+
   // Get current hour to check if it's after 11 PM
   const currentHour = new Date().getHours();
-  const today = new Date().toISOString().split('T')[0];
-  
+  const today = new Date().toISOString().split("T")[0];
+
   // 1. Attendance entries - simplified color scheme
   attendanceDates.forEach((item) => {
-    const dateStr = item.date.split('T')[0];
-    let dotColor = '#9CA3AF'; // Gray for absent
-    let backgroundColor = '#F3F4F6';
-    let textColor = '#1F2937';
-    
+    const dateStr = item.date.split("T")[0];
+    let dotColor = "#9CA3AF"; // Gray for absent
+    let backgroundColor = "#F3F4F6";
+    let textColor = "#1F2937";
 
     if (item.present === 1) {
       if (item.attendance) {
         // Special handling for today's attendance after 11 PM
-        if (dateStr === today && currentHour >= 23 && !item.attendance.isCheckout) {
+        if (
+          dateStr === today &&
+          currentHour >= 23 &&
+          !item.attendance.isCheckout
+        ) {
           // After 11 PM, show as Present even if not checked out
-          dotColor = '#10B981'; // Success
-          backgroundColor = '#D1FAE5';
-          textColor = '#065F46';
+          dotColor = "#10B981"; // Success
+          backgroundColor = "#D1FAE5";
+          textColor = "#065F46";
         } else if (!item.attendance.isCheckout) {
           // Before 11 PM or other days - show as In Progress
-          dotColor = '#F59E0B'; // Warning
-          backgroundColor = '#FEF3C7';
-          textColor = '#92400E';
+          dotColor = "#F59E0B"; // Warning
+          backgroundColor = "#FEF3C7";
+          textColor = "#92400E";
         } else {
           // Present (checked out - regardless of full/half day)
-          dotColor = '#10B981'; // Success
-          backgroundColor = '#D1FAE5';
-          textColor = '#065F46';
+          dotColor = "#10B981"; // Success
+          backgroundColor = "#D1FAE5";
+          textColor = "#065F46";
         }
       }
     }
-    
 
     marked[dateStr] = {
       marked: true,
@@ -153,30 +199,30 @@ export const getMarkedDates = (
         },
         text: {
           color: textColor,
-          fontWeight: 'bold',
+          fontWeight: "bold",
         },
       },
     };
   });
-  
+
   // 2. Holidays & weekends
   holidays.forEach((h) => {
-    const dateStr = h.date.split('T')[0] || h.date;
+    const dateStr = h.date.split("T")[0] || h.date;
     if (!marked[dateStr]) {
       marked[dateStr] = {
         customStyles: {
           container: {
-            backgroundColor: h.isWeekend ? '#E0E7FF' : '#FEF3C7',
+            backgroundColor: h.isWeekend ? "#E0E7FF" : "#FEF3C7",
             borderRadius: 6,
           },
           text: {
-            color: h.isWeekend ? '#6366F1' : '#92400E',
-            fontWeight: '500',
+            color: h.isWeekend ? "#6366F1" : "#92400E",
+            fontWeight: "500",
           },
         },
       };
     }
   });
-  
+
   return marked;
 };

@@ -19,6 +19,7 @@ export interface ProfileResponse {
 
 const createApiClient = () => {
   const authHeaders = useAuthStore.getState().getAuthHeaders();
+  console.log("auth header",authHeaders)
   
   return axios.create({
     baseURL: API_BASE,
@@ -30,12 +31,12 @@ const createApiClient = () => {
   });
 };
 
-export const getUserProfileByUsername = async (username: string): Promise<ProfileResponse> => {
+export const getUserProfileByEmployeeNumber = async (employeeNumber: string): Promise<ProfileResponse> => {
   try {
-    console.log('Fetching profile for username:', username);
+    console.log('Fetching profile for employeeNumber:', employeeNumber);
     
     const apiClient = createApiClient();
-    const { data } = await apiClient.get(`/profile/username/${username}`);
+    const { data } = await apiClient.get(`/profile/${employeeNumber}`); // Changed from /profile/username/
     
     console.log('Profile response:', data);
     
@@ -59,40 +60,6 @@ export const getUserProfileByUsername = async (username: string): Promise<Profil
     return {
       success: false,
       error: error.response?.data?.error || error.message || "Failed to fetch profile"
-    };
-  }
-};
-
-export const updateUserLocation = async (employeeNumber: string, location: string): Promise<ProfileResponse> => {
-  try {
-    console.log('Updating location for employeeNumber:', employeeNumber, 'to:', location);
-    
-    const apiClient = createApiClient();
-    const { data } = await apiClient.patch(`/profile/${employeeNumber}/location`, { location });
-    
-    console.log('Update location response:', data);
-    
-    return {
-      success: data.success,
-      data: data.data,
-      message: data.message
-    };
-  } catch (error: any) {
-    console.error('Update location error:', error);
-    
-    // Handle token expiry
-    if (error.response?.status === 403 || error.response?.status === 401) {
-      // Force logout
-      await useAuthStore.getState().signOut();
-      return {
-        success: false,
-        error: "Session expired. Please login again."
-      };
-    }
-    
-    return {
-      success: false,
-      error: error.response?.data?.error || error.message || "Failed to update location"
     };
   }
 };

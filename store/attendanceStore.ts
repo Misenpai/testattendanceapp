@@ -5,7 +5,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { getUserData } from "../services/UserId";
 import { AudioRecording, ViewMode } from "../types/attendance";
-// Hello Kritika
+import { useAuthStore } from "./authStore";
 interface AttendanceRecord {
   date: string;
   timestamp: number;
@@ -143,13 +143,13 @@ export const useAttendanceStore = create<AttendanceState>()(
               isInitialized: true,
             });
 
-            // Start the auto-update timer
-            get().startAutoUpdateTimer();
-
-            // Fetch user location settings first, then department, then attendance
+            // Check field trip status once on init
             await get().fetchUserLocationSettings();
             await get().fetchUserDepartment();
             await get().fetchTodayAttendanceFromServer();
+
+            // Start auto-update timer for 11PM rule
+            get().startAutoUpdateTimer();
           } else {
             set({
               userId: null,
@@ -266,14 +266,14 @@ export const useAttendanceStore = create<AttendanceState>()(
 
       fetchTodayAttendanceFromServer: async () => {
         const state = get();
-        if (!state.userId) return false;
+        const { employeeNumber } = useAuthStore.getState(); // Get employeeNumber
+        if (!employeeNumber) return false;
 
         try {
-          const { useAuthStore } = await import("./authStore");
           const authHeaders = useAuthStore.getState().getAuthHeaders();
 
           const res = await fetch(
-            `${process.env.EXPO_PUBLIC_API_BASE}/attendance/today/${state.userId}`,
+            `${process.env.EXPO_PUBLIC_API_BASE}/attendance/today/${employeeNumber}`, // Use employeeNumber
             {
               cache: "no-cache",
               headers: {
@@ -286,30 +286,30 @@ export const useAttendanceStore = create<AttendanceState>()(
           const data = await res.json();
           const today = getTodayDateString();
 
-          if (data.success && data.data && data.data.attendanceType) {
-            const attendanceType = data.data.attendanceType; // Access nested object
+          if (data.success && data.data) {
+            // Direct mapping from the new backend structure
+            const attendance = data.data;
 
             const serverRecord: AttendanceRecord = {
               date: today,
-              timestamp: new Date(attendanceType.checkinTime).getTime(), // Fixed
-              location: attendanceType.takenLocation || "Unknown", // Fixed
-              photosCount: data.data.photos?.length || 0,
-              hasAudio: data.data.audio?.length > 0,
-              checkInTime: attendanceType.checkinTime, // Fixed
-              checkOutTime: attendanceType.checkoutTime, // Fixed
+              timestamp: attendance.checkinTime
+                ? new Date(attendance.checkinTime).getTime()
+                : Date.now(),
+              location: attendance.takenLocation || "Unknown",
+              photosCount: attendance.photoUrl ? 1 : 0,
+              hasAudio: !!attendance.audioUrl,
+              checkInTime: attendance.checkinTime,
+              checkOutTime: attendance.checkoutTime,
               sessionType:
-                attendanceType.attendanceGivenTime === "FN"
-                  ? "FORENOON"
-                  : "AFTERNOON", // Fixed
-              attendanceType: attendanceType.fullDay ? "FULL_DAY" : "HALF_DAY", // Fixed
-              isCheckedOut: attendanceType.isCheckout, // Fixed
-              takenLocation: attendanceType.takenLocation, // Fixed
-              attendanceKey: data.data.attendanceKey,
+                attendance.sessionType === "FN" ? "FORENOON" : "AFTERNOON",
+              attendanceType: attendance.attendanceType,
+              isCheckedOut: !!attendance.checkoutTime,
+              takenLocation: attendance.takenLocation,
+              attendanceKey: `${attendance.employeeNumber}_${today}`,
             };
 
             const canCheckout =
-              !attendanceType.isCheckout &&
-              attendanceType.attendanceGivenTime !== undefined;
+              !attendance.checkoutTime && !!attendance.checkinTime;
 
             set({
               attendanceRecords: [
@@ -323,7 +323,7 @@ export const useAttendanceStore = create<AttendanceState>()(
             });
             return true;
           } else {
-            // Handle case where no attendance data exists
+            // No attendance for today
             set({
               attendanceRecords: state.attendanceRecords.filter(
                 (r) => r.date !== today
@@ -387,18 +387,20 @@ export const useAttendanceStore = create<AttendanceState>()(
       // Fetch user location settings and preserve field trip dates
       fetchUserLocationSettings: async () => {
         const state = get();
-        if (!state.userId) return;
+        const { employeeNumber } = useAuthStore.getState(); // Get employeeNumber
+        if (!employeeNumber) return;
 
         try {
-          console.log("Fetching location settings for username:", state.userId);
+          console.log(
+            "Fetching location settings for employeeNumber:",
+            employeeNumber
+          );
 
-          // Import auth store to get headers
-          const { useAuthStore } = await import("./authStore");
           const authHeaders = useAuthStore.getState().getAuthHeaders();
 
           // Use username endpoint instead of employeeCode
           const res = await fetch(
-            `${process.env.EXPO_PUBLIC_API_BASE}/user-field-trips/username/${state.userId}`,
+            `${process.env.EXPO_PUBLIC_API_BASE}/user-field-trips/employee/${employeeNumber}`, // Changed endpoint
             {
               method: "GET",
               headers: {
@@ -507,13 +509,14 @@ export const useAttendanceStore = create<AttendanceState>()(
 
       checkoutAttendance: async () => {
         const state = get();
-        if (!state.userId) return false;
+        const { employeeNumber } = useAuthStore.getState(); // Get employeeNumber
+        if (!employeeNumber) return false;
 
         try {
           const { checkoutAttendance } = await import(
             "../services/attendanceService"
           );
-          const result = await checkoutAttendance(state.userId);
+          const result = await checkoutAttendance(employeeNumber); // Pass employeeNumber
 
           if (result.success) {
             // Update local state

@@ -7,12 +7,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import {
   ProfileData as BaseProfileData,
-  getUserProfileByUsername,
-  updateUserLocation,
+  getUserProfileByEmployeeNumber,
 } from "../services/profileService";
 import { useAuthStore } from "../store/authStore";
 
-// Extend backend ProfileData with avatar
+
 export type ProfileDataWithAvatar = BaseProfileData & {
   avatar?: AvatarData | null;
 };
@@ -23,16 +22,17 @@ export const useProfile = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
+  
   const fetchProfile = useCallback(async () => {
-    if (!userName) return;
+    const { employeeNumber } = useAuthStore.getState(); 
+    if (!employeeNumber) return;
 
     try {
       setLoading(true);
 
-      const response = await getUserProfileByUsername(userName);
+      const response = await getUserProfileByEmployeeNumber(employeeNumber); 
 
       if (response.success && response.data) {
-        // Load avatar from local storage using employeeNumber
         const avatar = await getUserAvatar(response.data.employeeNumber);
         setProfile({
           ...response.data,
@@ -47,40 +47,15 @@ export const useProfile = () => {
     } finally {
       setLoading(false);
     }
-  }, [userName]);
+  }, []); 
 
+  
   useEffect(() => {
-    if (userName) {
+    const { employeeNumber } = useAuthStore.getState();
+    if (employeeNumber) {
       fetchProfile();
     }
-  }, [userName, fetchProfile]);
-
-  const updateLocation = async (newLocation: string) => {
-    if (!profile?.employeeNumber) return false;
-
-    try {
-      setUpdating(true);
-      const response = await updateUserLocation(profile.employeeNumber, newLocation);
-
-      if (response.success && response.data) {
-        setProfile({
-          ...response.data,
-          avatar: profile.avatar, // keep avatar intact
-        });
-        Alert.alert("Success", "Location updated successfully");
-        return true;
-      } else {
-        Alert.alert("Error", response.error || "Failed to update location");
-        return false;
-      }
-    } catch (error) {
-      console.error("Location update error:", error);
-      Alert.alert("Error", "Failed to update location");
-      return false;
-    } finally {
-      setUpdating(false);
-    }
-  };
+  }, []); 
 
   const updateAvatar = async (avatarData: AvatarData) => {
     if (!profile?.employeeNumber) return false;
@@ -111,7 +86,6 @@ export const useProfile = () => {
     loading,
     updating,
     fetchProfile,
-    updateLocation,
     updateAvatar,
     userName,
   };

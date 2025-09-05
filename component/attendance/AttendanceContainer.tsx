@@ -1,11 +1,5 @@
-
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  AppState,
-  FlatList,
-  ListRenderItem
-} from "react-native";
+import { Alert, AppState, FlatList, ListRenderItem } from "react-native";
 
 import { useCamera } from "@/hooks/useCamera";
 import { useGeofence } from "@/hooks/useGeofence";
@@ -14,8 +8,15 @@ import { useAuthStore } from "@/store/authStore";
 
 import { attendanceContainerStyles, globalStyles } from "@/constants/style";
 
-import { BUILDINGS, DEPT_TO_BUILDING, IIT_GUWAHATI_LOCATION } from "@/constants/geofenceLocation";
-import { getCachedHolidays, Holiday } from "@/services/attendanceCalendarService";
+import {
+  BUILDINGS,
+  DEPT_TO_BUILDING,
+  IIT_GUWAHATI_LOCATION,
+} from "@/constants/geofenceLocation";
+import {
+  getCachedHolidays,
+  Holiday,
+} from "@/services/attendanceCalendarService";
 import { AudioRecorder } from "../audio/AudioRecorder";
 import { CameraView } from "../camera/CameraView";
 import { ExpandedMapView } from "../map/ExpandedMapView";
@@ -63,12 +64,8 @@ export function AttendanceContainer() {
   const [holidayInfo, setHolidayInfo] = useState<Holiday | null>(null);
   const [checkingHoliday, setCheckingHoliday] = useState(true);
 
-  const geofence = useGeofence(
-    userLocationType,
-    isFieldTrip
-  );
+  const geofence = useGeofence(userLocationType, isFieldTrip);
 
-  
   useEffect(() => {
     const checkHolidayStatus = async () => {
       try {
@@ -76,26 +73,24 @@ export function AttendanceContainer() {
         const today = new Date();
         const year = today.getFullYear();
         const month = today.getMonth() + 1;
-        
-        
+
         const dayOfWeek = today.getDay();
         if (dayOfWeek === 0 || dayOfWeek === 6) {
           setIsHoliday(true);
           setHolidayInfo({
-            date: today.toISOString().split('T')[0],
-            description: dayOfWeek === 0 ? 'Sunday' : 'Saturday',
+            date: today.toISOString().split("T")[0],
+            description: dayOfWeek === 0 ? "Sunday" : "Saturday",
             isHoliday: true,
-            isWeekend: true
+            isWeekend: true,
           });
           setCheckingHoliday(false);
           return;
         }
 
-        
         const holidays = await getCachedHolidays(year, month);
-        const todayString = today.toISOString().split('T')[0];
-        const todayHoliday = holidays.find(h => h.date === todayString);
-        
+        const todayString = today.toISOString().split("T")[0];
+        const todayHoliday = holidays.find((h) => h.date === todayString);
+
         if (todayHoliday) {
           setIsHoliday(true);
           setHolidayInfo(todayHoliday);
@@ -104,7 +99,7 @@ export function AttendanceContainer() {
           setHolidayInfo(null);
         }
       } catch (error) {
-        console.error('Error checking holiday status:', error);
+        console.error("Error checking holiday status:", error);
         setIsHoliday(false);
         setHolidayInfo(null);
       } finally {
@@ -132,15 +127,6 @@ export function AttendanceContainer() {
   }, [checkTodayAttendance]);
 
   useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      if (session && userName) {
-        checkFieldTripStatus();
-      }
-    }, 1000);
-    return () => clearInterval(refreshInterval);
-  }, [session, userName, checkFieldTripStatus]);
-
-  useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (nextAppState === "active" && session && userName) {
         checkFieldTripStatus();
@@ -150,9 +136,7 @@ export function AttendanceContainer() {
     return () => subscription?.remove();
   }, [session, userName, checkFieldTripStatus]);
 
-  
   const resolveAttendanceLocation = () => {
-    
     if (isFieldTrip || userLocationType === "FIELDTRIP") {
       return "Outside IIT (Field Trip)";
     }
@@ -163,7 +147,9 @@ export function AttendanceContainer() {
     const iit = IIT_GUWAHATI_LOCATION;
     const department = useAttendanceStore.getState().department;
     const buildingId = department ? DEPT_TO_BUILDING[department] : null;
-    const building = buildingId ? BUILDINGS.find(b => b.id === buildingId) : null;
+    const building = buildingId
+      ? BUILDINGS.find((b) => b.id === buildingId)
+      : null;
 
     const R = 6371000;
     const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -199,10 +185,12 @@ export function AttendanceContainer() {
     return "Outside (IIT Guwahati)";
   };
 
+  // In component/attendance/AttendanceContainer.tsx
   const handleUpload = async () => {
     const finalLocation = resolveAttendanceLocation();
+    const { employeeNumber } = useAuthStore.getState(); // ✅ Get employeeNumber
 
-    if (!userId) {
+    if (!employeeNumber) {
       Alert.alert("Error", "Please login to mark attendance");
       return;
     }
@@ -215,7 +203,7 @@ export function AttendanceContainer() {
         "@/services/attendanceService"
       );
       const result = await uploadAttendanceData({
-        userId,
+        employeeNumber: employeeNumber,
         photos,
         audioRecording: audioRecording || undefined,
         location: finalLocation,
@@ -273,8 +261,8 @@ export function AttendanceContainer() {
     [geofence]
   );
 
-  
-  if (isLoadingUserId || checkingHoliday) return <LoadingScreen text="Loading..." />;
+  if (isLoadingUserId || checkingHoliday)
+    return <LoadingScreen text="Loading..." />;
   if (isInitialized && !userId)
     return (
       <LoadingScreen text="Please login to continue" subtext="Redirecting..." />
@@ -282,7 +270,6 @@ export function AttendanceContainer() {
   if (uploading)
     return <LoadingScreen text="Uploading..." subtext="Please wait" />;
 
-  
   if (isHoliday && holidayInfo) {
     return <HolidayScreen holidayInfo={holidayInfo} />;
   }

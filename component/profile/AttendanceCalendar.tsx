@@ -94,56 +94,90 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     loadHolidays();
   }, [selectedYear, selectedMonth]);
 
-  const fetchAttendanceData = useCallback(
-    async (showLoading = true) => {
-      try {
-        if (showLoading && !isChangingMonth) setLoading(true);
-        const response = await getAttendanceCalendar(
-          employeeCode,
-          selectedYear,
-          selectedMonth
+  const isWorkingDay = (dateStr: string, holidays: Holiday[]): boolean => {
+    const date = new Date(dateStr);
+    const dayOfWeek = date.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isHoliday = holidays.some((h) => h.date === dateStr);
+    return !isWeekend && !isHoliday;
+  };
+
+// In component/profile/AttendanceCalendar.tsx, update fetchAttendanceData:
+
+const fetchAttendanceData = useCallback(
+  async (showLoading = true) => {
+    try {
+      if (showLoading && !isChangingMonth) setLoading(true);
+      
+      const response = await getAttendanceCalendar(
+        employeeCode,
+        selectedYear,
+        selectedMonth
+      );
+      
+      if (response.success && response.data) {
+        const attendances = response.data.attendances;
+        
+        // Create a map for quick lookup
+        const attendanceMap = new Map(
+          attendances.map(a => [a.date, a])
         );
-        if (response.success && response.data) {
-          // Map backend 'attendances' to frontend 'AttendanceDate' structure
-          const mappedDates: AttendanceDate[] = response.data.attendances.map(
-            (a: any) => ({
-              date: a.attendanceCalendar.day.split("T")[0],
-              present: a.attendanceCalendar.present,
-              absent: a.attendanceCalendar.absent,
-              attendance: {
-                takenLocation: a.attendanceType.takenLocation || null,
-                checkinTime: a.attendanceType.checkinTime || null,
-                checkoutTime: a.attendanceType.checkoutTime || null,
-                sessionType: a.attendanceType.attendanceGivenTime,
-                fullDay: a.attendanceType.fullDay,
-                halfDay: a.attendanceType.halfDay,
-                isCheckout: a.attendanceType.isCheckout,
-              },
-            })
-          );
-          setAttendanceDates(mappedDates);
-          setStatistics(response.data.statistics);
-          // Get marked dates with holidays
-          const marked = getMarkedDates(mappedDates, holidays);
-          setMarkedDates(marked);
-        } else if (!isChangingMonth) {
-          Alert.alert(
-            "Error",
-            response.error || "Failed to load attendance data"
-          );
+        
+        // Generate all dates for the month
+        const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+        const allDatesInMonth: AttendanceDate[] = [];
+        const today = new Date().toISOString().split('T')[0];
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dateStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          
+          // Skip future dates
+          if (dateStr > today) continue;
+          
+          const existingAttendance = attendanceMap.get(dateStr);
+          
+          if (existingAttendance) {
+            // User was present
+            allDatesInMonth.push(existingAttendance);
+          } else {
+            // Check if it's a working day
+            const dayOfWeek = new Date(dateStr).getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            const isHoliday = holidays.some(h => h.date.split('T')[0] === dateStr);
+            
+            if (!isWeekend && !isHoliday) {
+              // It's a working day but no attendance = absent
+              allDatesInMonth.push({
+                date: dateStr,
+                present: 0,
+                absent: 1,
+                attendance: undefined
+              });
+            }
+          }
         }
-      } catch (error) {
-        console.error("Error fetching attendance:", error);
-        if (!isChangingMonth) {
-          Alert.alert("Error", "Failed to load attendance data");
-        }
-      } finally {
-        if (showLoading && !isChangingMonth) setLoading(false);
-        setIsChangingMonth(false);
+        
+        setAttendanceDates(allDatesInMonth);
+        setStatistics(response.data.statistics);
+        
+        // Update marked dates
+        const marked = getMarkedDates(allDatesInMonth, holidays);
+        setMarkedDates(marked);
+      } else if (!isChangingMonth) {
+        Alert.alert("Error", response.error || "Failed to load attendance data");
       }
-    },
-    [employeeCode, selectedYear, selectedMonth, holidays, isChangingMonth]
-  );
+    } catch (error) {
+      console.error("Error fetching attendance:", error);
+      if (!isChangingMonth) {
+        Alert.alert("Error", "Failed to load attendance data");
+      }
+    } finally {
+      if (showLoading && !isChangingMonth) setLoading(false);
+      setIsChangingMonth(false);
+    }
+  },
+  [employeeCode, selectedYear, selectedMonth, holidays, isChangingMonth]
+);
 
   useEffect(() => {
     if (holidays.length > 0) {
@@ -230,7 +264,11 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                 <FontAwesome6
                   name={holiday.isWeekend ? "calendar-week" : "calendar-xmark"}
                   size={32}
-                  color={holiday.isWeekend ? brutalistColors.weekend : brutalistColors.holiday}
+                  color={
+                    holiday.isWeekend
+                      ? brutalistColors.weekend
+                      : brutalistColors.holiday
+                  }
                 />
                 <Text style={styles.noDataText}>{holiday.description}</Text>
                 <Text style={styles.noDataSubText}>
@@ -365,7 +403,9 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                 style={[
                   styles.attendanceBadge,
                   {
-                    backgroundColor: holiday.isWeekend ? brutalistColors.weekend : brutalistColors.holiday,
+                    backgroundColor: holiday.isWeekend
+                      ? brutalistColors.weekend
+                      : brutalistColors.holiday,
                   },
                 ]}
               >
@@ -472,7 +512,12 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   // Calculate simplified statistics
   const getSimplifiedStatistics = () => {
     if (!attendanceDates || attendanceDates.length === 0) {
-      return { present: 0, absent: 0, inProgress: 0, holidays: holidays.length };
+      return {
+        present: 0,
+        absent: 0,
+        inProgress: 0,
+        holidays: holidays.length,
+      };
     }
 
     const present = attendanceDates.filter(
@@ -495,7 +540,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
   const enhancedMarkedDates = useMemo(() => {
     const marked = { ...markedDates };
-    
+
     // Handle field trip dates
     if (
       fieldTripDates &&
@@ -614,7 +659,12 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
           <View style={styles.simpleStatsGrid}>
             <View style={styles.simpleStatItem}>
-              <Text style={[styles.simpleStatValue, { color: brutalistColors.present }]}>
+              <Text
+                style={[
+                  styles.simpleStatValue,
+                  { color: brutalistColors.present },
+                ]}
+              >
                 {simplifiedStats.present}
               </Text>
               <Text style={styles.simpleStatLabel}>Present</Text>
@@ -623,7 +673,12 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
             <View style={styles.simpleStatDivider} />
 
             <View style={styles.simpleStatItem}>
-              <Text style={[styles.simpleStatValue, { color: brutalistColors.absent }]}>
+              <Text
+                style={[
+                  styles.simpleStatValue,
+                  { color: brutalistColors.absent },
+                ]}
+              >
                 {simplifiedStats.absent}
               </Text>
               <Text style={styles.simpleStatLabel}>Absent</Text>
@@ -632,7 +687,12 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
             <View style={styles.simpleStatDivider} />
 
             <View style={styles.simpleStatItem}>
-              <Text style={[styles.simpleStatValue, { color: brutalistColors.inProgress }]}>
+              <Text
+                style={[
+                  styles.simpleStatValue,
+                  { color: brutalistColors.inProgress },
+                ]}
+              >
                 {simplifiedStats.inProgress}
               </Text>
               <Text style={styles.simpleStatLabel}>In Progress</Text>
@@ -641,7 +701,12 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
             <View style={styles.simpleStatDivider} />
 
             <View style={styles.simpleStatItem}>
-              <Text style={[styles.simpleStatValue, { color: brutalistColors.holiday }]}>
+              <Text
+                style={[
+                  styles.simpleStatValue,
+                  { color: brutalistColors.holiday },
+                ]}
+              >
                 {simplifiedStats.holidays}
               </Text>
               <Text style={styles.simpleStatLabel}>Holidays</Text>
@@ -702,28 +767,47 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         <View style={styles.legendItems}>
           <View style={styles.legendItem}>
             <View
-              style={[styles.legendDot, { backgroundColor: brutalistColors.present }]}
+              style={[
+                styles.legendDot,
+                { backgroundColor: brutalistColors.present },
+              ]}
             />
             <Text style={styles.legendText}>Present</Text>
           </View>
           <View style={styles.legendItem}>
             <View
-              style={[styles.legendDot, { backgroundColor: brutalistColors.absent }]}
+              style={[
+                styles.legendDot,
+                { backgroundColor: brutalistColors.absent },
+              ]}
             />
             <Text style={styles.legendText}>Absent</Text>
           </View>
           <View style={styles.legendItem}>
             <View
-              style={[styles.legendDot, { backgroundColor: brutalistColors.inProgress }]}
+              style={[
+                styles.legendDot,
+                { backgroundColor: brutalistColors.inProgress },
+              ]}
             />
             <Text style={styles.legendText}>In Progress</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: brutalistColors.weekend }]} />
+            <View
+              style={[
+                styles.legendDot,
+                { backgroundColor: brutalistColors.weekend },
+              ]}
+            />
             <Text style={styles.legendText}>Weekend</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: brutalistColors.holiday }]} />
+            <View
+              style={[
+                styles.legendDot,
+                { backgroundColor: brutalistColors.holiday },
+              ]}
+            />
             <Text style={styles.legendText}>Holiday</Text>
           </View>
           {fieldTripDates &&

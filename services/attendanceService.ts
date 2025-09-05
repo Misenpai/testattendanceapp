@@ -1,5 +1,4 @@
 // services/attendanceService.ts
-import { useAttendanceStore } from "@/store/attendanceStore";
 import { useAuthStore } from "@/store/authStore";
 import { AttendanceProps } from "@/types/geofence";
 import axios from "axios";
@@ -10,7 +9,7 @@ export interface CheckoutResponse {
   success: boolean;
   data?: {
     checkOutTime: string;
-    attendanceType: 'FULL_DAY' | 'HALF_DAY';
+    attendanceType: "FULL_DAY" | "HALF_DAY";
     message: string;
   };
   error?: string;
@@ -22,8 +21,8 @@ export interface TodayAttendanceResponse {
     attendanceKey: string;
     checkInTime: string;
     checkOutTime?: string;
-    sessionType: 'FORENOON' | 'AFTERNOON';
-    attendanceType?: 'FULL_DAY' | 'HALF_DAY';
+    sessionType: "FORENOON" | "AFTERNOON";
+    attendanceType?: "FULL_DAY" | "HALF_DAY";
     isCheckedOut: boolean;
     takenLocation?: string;
     latitude?: number;
@@ -39,31 +38,32 @@ interface AttendancePropsWithCoordinates extends AttendanceProps {
   longitude?: number;
 }
 
+// Update the upload function to use employeeNumber
 export const uploadAttendanceData = async ({
-  userId,
+  employeeNumber, // This should actually be employeeNumber
   photos,
   audioRecording,
   location,
   latitude,
-  longitude
+  longitude,
 }: AttendancePropsWithCoordinates) => {
   try {
-    if (!userId) {
+    if (!employeeNumber) {
       return { success: false, error: "User not logged in" };
     }
 
     const form = new FormData();
     const uploadTimestamp = Date.now();
     form.append("locationType", "CAMPUS");
-    
-    form.append("username", userId.toString());
+
+    // ✅ Changed from username to employeeNumber
+    form.append("employeeNumber", employeeNumber.toString());
     form.append("timestamp", uploadTimestamp.toString());
-    
+
     if (location && location.trim()) {
       form.append("location", location);
     }
 
-    // Add coordinates if available
     if (latitude !== undefined && latitude !== null) {
       form.append("latitude", latitude.toString());
     }
@@ -71,20 +71,17 @@ export const uploadAttendanceData = async ({
       form.append("longitude", longitude.toString());
     }
 
-    const currentPhotoPosition = useAttendanceStore.getState().currentSessionPhotoPosition || 'front';
-    form.append("photoType", currentPhotoPosition);
+    // ✅ Backend now expects only ONE photo
+    if (photos.length > 0 && photos[0]?.uri) {
+      const photoFile = {
+        uri: photos[0].uri,
+        type: "image/jpeg",
+        name: `photo_${uploadTimestamp}.jpg`,
+      };
+      form.append("photo", photoFile as any); // singular
+    }
 
-    photos.forEach((photo, idx) => {
-      if (photo?.uri) {
-        const photoFile = {
-          uri: photo.uri,
-          type: "image/jpeg",
-          name: `photo_${idx}_${uploadTimestamp}.jpg`,
-        };
-        form.append("photos", photoFile as any);
-      }
-    });
-
+    // ✅ Backend now expects only ONE audio file
     if (audioRecording?.uri) {
       const audioFile = {
         uri: audioRecording.uri,
@@ -92,7 +89,7 @@ export const uploadAttendanceData = async ({
         name: `audio_${uploadTimestamp}.m4a`,
       };
       form.append("audio", audioFile as any);
-      
+
       if (audioRecording.duration) {
         form.append("audioDuration", audioRecording.duration.toString());
       }
@@ -102,9 +99,9 @@ export const uploadAttendanceData = async ({
     const authHeaders = useAuthStore.getState().getAuthHeaders();
 
     const { data } = await axios.post(`${API_BASE}/attendance`, form, {
-      headers: { 
+      headers: {
         "Content-Type": "multipart/form-data",
-        ...authHeaders
+        ...authHeaders,
       },
       timeout: 30000,
     });
@@ -112,66 +109,70 @@ export const uploadAttendanceData = async ({
     return { success: true, id: data.id, data: data.data };
   } catch (e: any) {
     console.error("Upload error:", e);
-    
-    // Handle token expiry
+
     if (e.response?.status === 403 || e.response?.status === 401) {
-      return { 
-        success: false, 
-        error: "Session expired. Please login again."
+      return {
+        success: false,
+        error: "Session expired. Please login again.",
       };
     }
-    
-    return { 
-      success: false, 
-      error: e.response?.data?.error || e.message || "Upload failed"
+
+    return {
+      success: false,
+      error: e.response?.data?.error || e.message || "Upload failed",
     };
   }
 };
 
-export const checkoutAttendance = async (username: string): Promise<CheckoutResponse> => {
-  try {
-    // Get auth headers
-    const authHeaders = useAuthStore.getState().getAuthHeaders();
-    
-    const { data } = await axios.post(`${API_BASE}/attendance/checkout`, {
-      username
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders
-      },
-      timeout: 10000,
-    });
 
-    return { 
-      success: true, 
-      data: data.data 
+export const checkoutAttendance = async (
+  employeeNumber: string
+): Promise<CheckoutResponse> => {
+  try {
+    const authHeaders = useAuthStore.getState().getAuthHeaders();
+
+    const { data } = await axios.post(
+      `${API_BASE}/attendance/checkout`,
+      {
+        employeeNumber, // Changed from username
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
+        timeout: 10000,
+      }
+    );
+
+    return {
+      success: true,
+      data: data.data,
     };
   } catch (e: any) {
     console.error("Checkout error:", e);
-    
+
     // Handle token expiry
     if (e.response?.status === 403 || e.response?.status === 401) {
-      return { 
-        success: false, 
-        error: "Session expired. Please login again."
+      return {
+        success: false,
+        error: "Session expired. Please login again.",
       };
     }
-    
-    return { 
-      success: false, 
-      error: e.response?.data?.error || e.message || "Checkout failed"
+
+    return {
+      success: false,
+      error: e.response?.data?.error || e.message || "Checkout failed",
     };
   }
 };
 
-export const getTodayAttendance = async (username: string): Promise<TodayAttendanceResponse> => {
+export const getTodayAttendance = async (employeeNumber: string): Promise<TodayAttendanceResponse> => {
   try {
-    // Get auth headers
     const authHeaders = useAuthStore.getState().getAuthHeaders();
     
     const { data } = await axios.get(
-      `${API_BASE}/attendance/today/${username}`,
+      `${API_BASE}/attendance/today/${employeeNumber}`, // Still using employeeNumber in URL
       { 
         timeout: 10000,
         headers: authHeaders
@@ -184,18 +185,18 @@ export const getTodayAttendance = async (username: string): Promise<TodayAttenda
     };
   } catch (e: any) {
     console.error("Get today attendance error:", e);
-    
+
     // Handle token expiry
     if (e.response?.status === 403 || e.response?.status === 401) {
-      return { 
-        success: false, 
-        error: "Session expired. Please login again."
+      return {
+        success: false,
+        error: "Session expired. Please login again.",
       };
     }
-    
+
     return {
       success: false,
-      error: e.response?.data?.error || e.message || "Failed to get attendance"
+      error: e.response?.data?.error || e.message || "Failed to get attendance",
     };
   }
 };
