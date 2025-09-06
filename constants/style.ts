@@ -420,13 +420,13 @@ export const mapCardStyles = StyleSheet.create({
     backgroundColor: "#fff",  // flat white fill
     shadowColor: "#000",
     shadowOffset: { width: 6, height: 6 }, // offset shadow for brutalist effect
-    shadowOpacity: 1,
+    shadowOpacity: 0,
     shadowRadius: 0,
     elevation: 8,
   },
 
   mapContainer: {
-    height: 200,
+    height: 500,
     position: "relative",
     borderBottomWidth: 2,     // brutal separation
     borderColor: "#000",

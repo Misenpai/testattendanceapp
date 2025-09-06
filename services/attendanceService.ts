@@ -56,8 +56,8 @@ export const uploadAttendanceData = async ({
     const uploadTimestamp = Date.now();
     form.append("locationType", "CAMPUS");
 
-    // ✅ Changed from username to employeeNumber
-    form.append("employeeNumber", employeeNumber.toString());
+    form.append("username", useAuthStore.getState().userName || ""); // Add this line
+    form.append("employeeNumber", employeeNumber.toString()); // Keep this line
     form.append("timestamp", uploadTimestamp.toString());
 
     if (location && location.trim()) {
@@ -94,7 +94,7 @@ export const uploadAttendanceData = async ({
         form.append("audioDuration", audioRecording.duration.toString());
       }
     }
-    console.log("form data", form)
+    console.log("form data", form);
 
     // Get auth headers
     const authHeaders = useAuthStore.getState().getAuthHeaders();
@@ -107,7 +107,7 @@ export const uploadAttendanceData = async ({
       timeout: 30000,
     });
 
-    console.log("attendance data",data)
+    console.log("attendance data", data);
 
     return { success: true, id: data.id, data: data.data };
   } catch (e: any) {
@@ -126,7 +126,6 @@ export const uploadAttendanceData = async ({
     };
   }
 };
-
 
 export const checkoutAttendance = async (
   employeeNumber: string
@@ -170,21 +169,23 @@ export const checkoutAttendance = async (
   }
 };
 
-export const getTodayAttendance = async (employeeNumber: string): Promise<TodayAttendanceResponse> => {
+export const getTodayAttendance = async (
+  employeeNumber: string
+): Promise<TodayAttendanceResponse> => {
   try {
     const authHeaders = useAuthStore.getState().getAuthHeaders();
-    
+
     const { data } = await axios.get(
       `${API_BASE}/attendance/today/${employeeNumber}`, // Still using employeeNumber in URL
-      { 
+      {
         timeout: 10000,
-        headers: authHeaders
+        headers: authHeaders,
       }
     );
 
     return {
       success: data.success,
-      data: data.data
+      data: data.data,
     };
   } catch (e: any) {
     console.error("Get today attendance error:", e);
