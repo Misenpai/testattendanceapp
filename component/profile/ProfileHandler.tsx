@@ -14,7 +14,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ username }) => {
 
         {/* Subtitle */}
         <Text style={styles.headerSubtitle}>
-          Manage your account settings
+          Manage your account
         </Text>
       </View>
     </View>
