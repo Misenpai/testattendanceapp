@@ -1,10 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-import { loginUser } from '../services/authService';
-import { clearUserData, getUserData, storeUserData } from '../services/UserId';
-import { useAttendanceStore } from './attendanceStore';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Alert } from "react-native";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { loginUser } from "../services/authService";
+import { clearUserData, getUserData, storeUserData } from "../services/UserId";
+import { useAttendanceStore } from "./attendanceStore";
 
 interface AuthState {
   session: string | null;
@@ -46,12 +46,15 @@ export const useAuthStore = create<AuthState>()(
         try {
           const userData = await getUserData();
           const state = get();
-          
+
           if (state.token && state.tokenExpiry) {
             const isExpired = Date.now() >= state.tokenExpiry;
             if (isExpired) {
               await get().signOut();
-              Alert.alert('Session Expired', 'Your session has expired. Please login again.');
+              Alert.alert(
+                "Session Expired",
+                "Your session has expired. Please login again."
+              );
               set({ isLoading: false, isInitialized: true });
               return;
             }
@@ -65,7 +68,7 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false,
               isInitialized: true,
             });
-            
+
             useAttendanceStore.getState().setUserId(userData.name);
             get().refreshTokenTimer();
           } else {
@@ -84,33 +87,34 @@ export const useAuthStore = create<AuthState>()(
 
       refreshTokenTimer: () => {
         const state = get();
-        
+
         // Clear existing timer
         state.clearAutoLogoutTimer();
-        
+
         if (state.tokenExpiry) {
           const timeUntilExpiry = state.tokenExpiry - Date.now();
-          
+
           if (timeUntilExpiry > 0) {
             // Set timer to auto-logout when token expires
             const timer = setTimeout(async () => {
               await get().signOut();
               Alert.alert(
-                'Session Expired',
-                'Your session has expired. Please login again.',
-                [{ text: 'OK' }]
+                "Session Expired",
+                "Your session has expired. Please login again.",
+                [{ text: "OK" }]
               );
             }, timeUntilExpiry);
-            
+
             set({ autoLogoutTimer: timer });
-            
+
             // Warn user 2 minutes before expiry
-            if (timeUntilExpiry > 120000) { // More than 2 minutes
+            if (timeUntilExpiry > 120000) {
+              // More than 2 minutes
               setTimeout(() => {
                 Alert.alert(
-                  'Session Expiring',
-                  'Your session will expire in 2 minutes.',
-                  [{ text: 'OK' }]
+                  "Session Expiring",
+                  "Your session will expire in 2 minutes.",
+                  [{ text: "OK" }]
                 );
               }, timeUntilExpiry - 120000);
             }
@@ -138,16 +142,16 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const res = await loginUser(username, password);
-          
+
           if (res.success && res.token) {
-            const tokenExpiry = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 days
-            
+          const tokenExpiry = Date.now() + (30 * 60 * 1000); // 30 minutes
+
             await storeUserData({
               employeeNumber: res.employeeNumber!,
               name: res.username!,
               isLoggedIn: true,
             });
-            
+
             set({
               session: res.employeeNumber,
               userName: res.username,
@@ -158,24 +162,24 @@ export const useAuthStore = create<AuthState>()(
               tokenExpiry,
               isLoading: false,
             });
-            
+
             useAttendanceStore.getState().setUserId(res.username!);
-            
+
             // Set department from projects
             if (res.projects && res.projects.length > 0) {
               const department = res.projects[0].department;
               useAttendanceStore.getState().setDepartment(department);
             }
-            
+
             get().refreshTokenTimer();
-            Alert.alert('Success', 'Logged in successfully!');
+            Alert.alert("Success", "Logged in successfully!");
           } else {
             set({ isLoading: false });
-            Alert.alert('Login Failed', res.error || 'Unknown error');
+            Alert.alert("Login Failed", res.error || "Unknown error");
           }
         } catch {
           set({ isLoading: false });
-          Alert.alert('Error', 'Unexpected error during login');
+          Alert.alert("Error", "Unexpected error during login");
         }
       },
 
@@ -202,7 +206,7 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (loading) => set({ isLoading: loading }),
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         session: state.session,

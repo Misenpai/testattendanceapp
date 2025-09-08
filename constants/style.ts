@@ -426,7 +426,7 @@ export const mapCardStyles = StyleSheet.create({
   },
 
   mapContainer: {
-    height: 500,
+    height: 300,
     position: "relative",
     borderBottomWidth: 2,     // brutal separation
     borderColor: "#000",

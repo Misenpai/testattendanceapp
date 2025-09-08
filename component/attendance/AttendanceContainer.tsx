@@ -9,14 +9,10 @@ import { useAuthStore } from "@/store/authStore";
 import { attendanceContainerStyles, globalStyles } from "@/constants/style";
 
 import {
-  BUILDINGS,
-  DEPT_TO_BUILDING,
-  IIT_GUWAHATI_LOCATION,
-} from "@/constants/geofenceLocation";
-import {
   getCachedHolidays,
   Holiday,
 } from "@/services/attendanceCalendarService";
+import { attendanceValidation } from "@/services/attendanceValidationService";
 import { AudioRecorder } from "../audio/AudioRecorder";
 import { CameraView } from "../camera/CameraView";
 import { ExpandedMapView } from "../map/ExpandedMapView";
@@ -136,66 +132,52 @@ export function AttendanceContainer() {
     return () => subscription?.remove();
   }, [session, userName, checkFieldTripStatus]);
 
-  const resolveAttendanceLocation = () => {
-    if (isFieldTrip || userLocationType === "FIELDTRIP") {
-      return "Outside IIT (Field Trip)";
+  const handleUpload = async () => {
+    // Get user's current position
+    const userCoordinates = geofence.userPos;
+
+    if (!userCoordinates) {
+      Alert.alert(
+        "Error",
+        "Unable to get your current location. Please ensure location services are enabled."
+      );
+      return;
     }
 
-    const position = geofence.userPos;
-    if (!position) return "Outside (Unknown Location)";
+    // Get department from store
+    const { department, userLocationType } = useAttendanceStore.getState();
 
-    const iit = IIT_GUWAHATI_LOCATION;
-    const department = useAttendanceStore.getState().department;
-    const buildingId = department ? DEPT_TO_BUILDING[department] : null;
-    const building = buildingId
-      ? BUILDINGS.find((b) => b.id === buildingId)
-      : null;
+    if (!department && userLocationType === "CAMPUS") {
+      Alert.alert(
+        "Error",
+        "Department information not found. Please contact support."
+      );
+      return;
+    }
 
-    const R = 6371000;
-    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    // Validate attendance conditions
+    const validation = attendanceValidation.validateAttendance(
+      userCoordinates,
+      department || "",
+      userLocationType
+    );
 
-    const insideIIT = (() => {
-      const dLat = toRad(iit.center.lat - position.lat);
-      const dLng = toRad(iit.center.lng - position.lng);
-      const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRad(position.lat)) *
-          Math.cos(toRad(iit.center.lat)) *
-          Math.sin(dLng / 2) ** 2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c <= iit.radius;
-    })();
+    if (!validation.isValid) {
+      Alert.alert(
+        "Cannot Mark Attendance",
+        validation.reason || "Validation failed"
+      );
+      return;
+    }
 
-    if (!insideIIT || !building) return "Outside (IIT Guwahati)";
-
-    const insideBuilding = (() => {
-      const dLat = toRad(building.center.lat - position.lat);
-      const dLng = toRad(building.center.lng - position.lng);
-      const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRad(position.lat)) *
-          Math.cos(toRad(building.center.lat)) *
-          Math.sin(dLng / 2) ** 2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c <= building.radius;
-    })();
-
-    if (insideBuilding) return building.label;
-
-    return "Outside (IIT Guwahati)";
-  };
-
-  // In component/attendance/AttendanceContainer.tsx
-  const handleUpload = async () => {
-    const finalLocation = resolveAttendanceLocation();
-    const { employeeNumber } = useAuthStore.getState(); // ✅ Get employeeNumber
+    // Get the final location from validation
+    const finalLocation = validation.details?.userLocation || "Unknown";
+    const { employeeNumber } = useAuthStore.getState();
 
     if (!employeeNumber) {
       Alert.alert("Error", "Please login to mark attendance");
       return;
     }
-
-    const userCoordinates = geofence.userPos;
 
     setUploading(true);
     try {
@@ -243,6 +225,28 @@ export function AttendanceContainer() {
     } finally {
       setUploading(false);
     }
+  };
+
+  // Add a helper function to show location status
+  const getLocationStatusMessage = () => {
+    if (!geofence.userPos || !useAttendanceStore.getState().department) {
+      return null;
+    }
+
+    const { department, userLocationType } = useAttendanceStore.getState();
+    const status = attendanceValidation.getLocationStatus(
+      geofence.userPos,
+      department || "",
+      userLocationType
+    );
+
+    const timeCheck = attendanceValidation.isWithinWorkingHours();
+
+    return {
+      location: status,
+      timeStatus: timeCheck.timeInfo,
+      canMarkAttendance: timeCheck.isValid,
+    };
   };
 
   const mapComponent = React.useMemo(

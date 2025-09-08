@@ -18,6 +18,7 @@ interface ActionButtonsProps {
   onUpload: () => void;
   uploading: boolean;
   totalPhotos: number;
+  canSubmit: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -29,6 +30,7 @@ export function ActionButtons({
   onUpload,
   uploading,
   totalPhotos,
+  canSubmit,
 }: ActionButtonsProps) {
   const scale = useSharedValue(1);
 
@@ -45,6 +47,7 @@ export function ActionButtons({
   };
 
   const isComplete = photos.length === totalPhotos && audioRecording !== null;
+  const isButtonDisabled = !isComplete || uploading || !canSubmit;
 
   return (
     <View style={styles.container}>
@@ -54,11 +57,20 @@ export function ActionButtons({
             onPress={onUpload}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
-            style={[styles.primaryButton, animatedStyle, !isComplete && styles.buttonDisabled]}
-            disabled={!isComplete || uploading}
+            style={[
+              styles.primaryButton,
+              animatedStyle,
+              isButtonDisabled && styles.buttonDisabled,
+            ]}
+            disabled={isButtonDisabled}
           >
             <View
-              style={[styles.brutalistButton, isComplete ? styles.successButton : styles.disabledButton]}
+              style={[
+                styles.brutalistButton,
+                !isButtonDisabled
+                  ? styles.successButton
+                  : styles.disabledButton,
+              ]}
             >
               <FontAwesome6
                 name={uploading ? "spinner" : "cloud-arrow-up"}
@@ -72,7 +84,11 @@ export function ActionButtons({
           </AnimatedPressable>
 
           <Pressable onPress={onRetakeAll} style={styles.secondaryButton}>
-            <FontAwesome6 name="arrow-rotate-left" size={18} color={colors.black} />
+            <FontAwesome6
+              name="arrow-rotate-left"
+              size={18}
+              color={colors.black}
+            />
             <Text style={styles.secondaryButtonText}>Retake</Text>
           </Pressable>
         </View>

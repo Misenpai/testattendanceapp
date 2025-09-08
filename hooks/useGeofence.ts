@@ -1,8 +1,7 @@
 // hooks/useGeofence.ts
 import {
-  BUILDINGS,
-  DEPT_TO_BUILDING,
-  IIT_GUWAHATI_LOCATION,
+  getDepartmentLocation,
+  IIT_GUWAHATI_LOCATION
 } from "@/constants/geofenceLocation";
 import { useAttendanceStore } from "@/store/attendanceStore";
 import { LatLng, MapLayer, MapMarker, MapShape } from "@/types/geofence";
@@ -28,7 +27,7 @@ type AttendanceUpdateCallback = (coordinates: AttendanceCoordinates) => void;
 export function useGeofence(
   userLocationType?: "CAMPUS" | "FIELDTRIP" | null,
   isFieldTrip?: boolean,
-  onLocationUpdate?: AttendanceUpdateCallback,
+  onLocationUpdate?: AttendanceUpdateCallback
 ) {
   const [html, setHtml] = useState<string | null>(null);
   const [userPos, setUserPos] = useState<LatLng | null>(null);
@@ -38,26 +37,26 @@ export function useGeofence(
 
   const department = useAttendanceStore((state) => state.department);
 
-  // Update active geofence locations logic
+  // Update active geofence locations logic for departments
   const activeGeofenceLocations = useMemo(() => {
     if (userLocationType === "FIELDTRIP") {
       // For field trips, return empty array but still track location
       return [];
     }
 
-    // CAMPUS type - IIT + user's building
+    // CAMPUS type - IIT + user's department
     if (!department) {
       return [IIT_GUWAHATI_LOCATION];
     }
 
-    const buildingId = DEPT_TO_BUILDING[department];
-    const building = BUILDINGS.find((b) => b.id === buildingId);
+    const departmentLocation = getDepartmentLocation(department);
 
-    if (!building) {
+    if (!departmentLocation) {
+      console.warn(`Department ${department} not found in configuration`);
       return [IIT_GUWAHATI_LOCATION];
     }
 
-    return [IIT_GUWAHATI_LOCATION, building];
+    return [IIT_GUWAHATI_LOCATION, departmentLocation];
   }, [department, userLocationType]);
 
   const haversine = useCallback(
@@ -74,7 +73,7 @@ export function useGeofence(
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c;
     },
-    [],
+    []
   );
 
   const checkGeofences = useCallback(
@@ -88,29 +87,33 @@ export function useGeofence(
       }
 
       const iit = activeGeofenceLocations[0];
-      const building = activeGeofenceLocations[1];
+      const departmentLocation = activeGeofenceLocations[1];
 
       const distToIIT = haversine(
         position.lat,
         position.lng,
         iit.center.lat,
-        iit.center.lng,
+        iit.center.lng
       );
 
-      const distToBuilding = haversine(
+      const distToDepartment = haversine(
         position.lat,
         position.lng,
-        building.center.lat,
-        building.center.lng,
+        departmentLocation.center.lat,
+        departmentLocation.center.lng
       );
 
-      if (distToIIT <= iit.radius && distToBuilding <= building.radius) {
-        return building.label;
+      // Check both IIT campus and department radius
+      if (distToIIT <= iit.radius) {
+        if (distToDepartment <= departmentLocation.radius) {
+          return departmentLocation.label;
+        }
+        return "Inside IIT (Outside Department)";
       }
 
-      return null;
+      return "Outside IIT Guwahati";
     },
-    [haversine, activeGeofenceLocations, userLocationType],
+    [haversine, activeGeofenceLocations, userLocationType]
   );
 
   // Add function to send coordinates to attendance service
@@ -126,52 +129,58 @@ export function useGeofence(
         onLocationUpdate(coordinates);
       }
     },
-    [onLocationUpdate],
+    [onLocationUpdate]
   );
 
   // Add method to manually capture current position for attendance
-  const captureLocationForAttendance = useCallback(async (): Promise<AttendanceCoordinates | null> => {
-    try {
-      const { coords } = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High, // Use high accuracy for attendance
-      });
+  const captureLocationForAttendance = useCallback(
+    async (): Promise<AttendanceCoordinates | null> => {
+      try {
+        const { coords } = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High, // Use high accuracy for attendance
+        });
 
-      const position: LatLng = {
-        lat: coords.latitude,
-        lng: coords.longitude,
-      };
+        const position: LatLng = {
+          lat: coords.latitude,
+          lng: coords.longitude,
+        };
 
-      const detectedLocation = checkGeofences(position);
-      
-      const coordinates: AttendanceCoordinates = {
-        latitude: position.lat,
-        longitude: position.lng,
-        location: detectedLocation,
-        timestamp: new Date(),
-      };
+        const detectedLocation = checkGeofences(position);
 
-      // Also call the callback if provided
-      if (onLocationUpdate) {
-        onLocationUpdate(coordinates);
+        const coordinates: AttendanceCoordinates = {
+          latitude: position.lat,
+          longitude: position.lng,
+          location: detectedLocation,
+          timestamp: new Date(),
+        };
+
+        // Also call the callback if provided
+        if (onLocationUpdate) {
+          onLocationUpdate(coordinates);
+        }
+
+        return coordinates;
+      } catch (error) {
+        Alert.alert(
+          "Location Error",
+          "Failed to capture location for attendance"
+        );
+        return null;
       }
-
-      return coordinates;
-    } catch (error) {
-      Alert.alert("Location Error", "Failed to capture location for attendance");
-      return null;
-    }
-  }, [checkGeofences, onLocationUpdate]);
+    },
+    [checkGeofences, onLocationUpdate]
+  );
 
   const mapShapes = useMemo(
     (): MapShape[] =>
       activeGeofenceLocations.map((geofence, index) => ({
         shapeType: MapShapeType.CIRCLE,
-        color: index === 0 ? "#00a8ff" : "#f00", // IIT blue, building red
+        color: index === 0 ? "#00a8ff" : "#ff6b6b", // IIT blue, department red
         id: geofence.id,
         center: geofence.center,
         radius: geofence.radius,
       })),
-    [activeGeofenceLocations],
+    [activeGeofenceLocations]
   );
 
   const mapLayers = useMemo(
@@ -185,13 +194,13 @@ export function useGeofence(
           '&copy; <a href="https://www.openstreetmap.org/copyright ">OSM</a>',
       },
     ],
-    [],
+    []
   );
 
   const staticLabelMarkers = useMemo(
     (): MapMarker[] =>
       activeGeofenceLocations.map((g, idx) => {
-        const offsetLat = g.center.lat + 0.00015 * (idx + 1); // Slight offset for labels
+        const offsetLat = g.center.lat + 0.00015 * (idx + 1);
         const offsetLng = g.center.lng;
 
         return {
@@ -200,7 +209,7 @@ export function useGeofence(
           icon: `
             <div style="
               position: relative;
-              background: ${idx === 0 ? "#00a8ff" : "#f00"};
+              background: ${idx === 0 ? "#00a8ff" : "#ff6b6b"};
               border: 2px solid #fff;
               border-radius: 8px;
               padding: 6px 10px;
@@ -209,7 +218,7 @@ export function useGeofence(
               color: #fff;
               white-space: nowrap;
               box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-              min-width: 80px;
+              min-width: 100px;
               text-align: center;
             ">
               ${g.label}
@@ -222,15 +231,15 @@ export function useGeofence(
                 height: 0;
                 border-left: 8px solid transparent;
                 border-right: 8px solid transparent;
-                border-top: 8px solid ${idx === 0 ? "#00a8ff" : "#f00"};
+                border-top: 8px solid ${idx === 0 ? "#00a8ff" : "#ff6b6b"};
               "></div>
             </div>
           `,
-          size: [100, 35],
-          anchor: [50, 35],
+          size: [120, 35],
+          anchor: [60, 35],
         };
       }),
-    [activeGeofenceLocations],
+    [activeGeofenceLocations]
   );
 
   const mapMarkers = useMemo((): MapMarker[] => {
@@ -271,11 +280,11 @@ export function useGeofence(
 
     const totalLat = activeGeofenceLocations.reduce(
       (sum, loc) => sum + loc.center.lat,
-      0,
+      0
     );
     const totalLng = activeGeofenceLocations.reduce(
       (sum, loc) => sum + loc.center.lng,
-      0,
+      0
     );
 
     return {
@@ -315,7 +324,10 @@ export function useGeofence(
           accuracy: Location.Accuracy.Balanced,
         });
 
-        const initialPosition = { lat: coords.latitude, lng: coords.longitude };
+        const initialPosition = {
+          lat: coords.latitude,
+          lng: coords.longitude,
+        };
 
         if (isComponentMounted) {
           setUserPos(initialPosition);
@@ -323,7 +335,7 @@ export function useGeofence(
           const detectedLocation = checkGeofences(initialPosition);
           setCurrentLocation(detectedLocation);
           setIsInitialized(true);
-          
+
           // Send initial position to attendance service
           updateAttendanceLocation(initialPosition, detectedLocation);
         }
@@ -345,10 +357,10 @@ export function useGeofence(
             const detectedLocation = checkGeofences(newPos);
             setUserPos(newPos);
             setCurrentLocation(detectedLocation);
-            
+
             // Send updated position to attendance service
             updateAttendanceLocation(newPos, detectedLocation);
-          },
+          }
         );
       } catch (e) {
         if (isComponentMounted) {
@@ -367,7 +379,7 @@ export function useGeofence(
 
   const requestPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
-    return status === 'granted';
+    return status === "granted";
   };
 
   return {

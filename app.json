@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "test_application",
-    "slug": "test_application",
+    "name": "presence",
+    "slug": "presence",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/playstore.png",
     "scheme": "testapplication",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

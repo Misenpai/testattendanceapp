@@ -3,13 +3,13 @@ import { TermsAndConditionsScreen } from "@/component/ui/TermsAndConditionsScree
 import { useAudio } from "@/hooks/useAudio";
 import { useCamera } from "@/hooks/useCamera";
 import { useGeofence as useLocation } from "@/hooks/useGeofence";
+import { NotificationProvider } from "@/provider/NotificationProvider";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, Stack, useRootNavigationState, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { Alert, AppState } from "react-native";
 import { useAuthStore } from "../store/authStore";
-import { NotificationProvider } from "@/provider/NotificationProvider";
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, isLoading, isInitialized, initializeAuth, checkTokenExpiry } = useAuthStore();

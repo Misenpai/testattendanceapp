@@ -30,6 +30,7 @@ export const ProfileContainer: React.FC = () => {
 
   // Get department from projects
   const department = projects.length > 0 ? projects[0].department : 'Not Assigned';
+  console.log("department",department)
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>

@@ -1,3 +1,10 @@
+// component/attendance/HomeView.tsx (Add validation status display)
+import { useGeofence } from "@/hooks/useGeofence";
+import {
+  attendanceValidation,
+  ValidationResult,
+} from "@/services/attendanceValidationService";
+// ... (keep existing imports)
 import { colors } from "@/constants/colors";
 import { checkoutAttendance } from "@/services/attendanceService";
 import { useAuthStore } from "@/store/authStore";
@@ -36,11 +43,107 @@ const brutalistColors = {
   black: "#000000",
   white: "#FFFFFF",
   error: "#dc2626",
+  errorBg: "#fecaca", // Light red for error backgrounds
   success: "#16a34a",
   warning: "#f97316",
   gray: "#a1a1aa",
   lightGray: "#f4f4f5",
 };
+
+// New Brutalist Validation Error Card Component
+function ValidationErrorCard({ reason }: { reason: string }) {
+  return (
+    <View style={styles.validationErrorCard}>
+      <FontAwesome6 name="question-circle" size={20} color={brutalistColors.error} />
+      <Text style={styles.validationErrorText}>{reason}</Text>
+    </View>
+  );
+}
+
+// New Brutalist Location Status Card Component
+function LocationStatusCard({
+  details,
+  department,
+  userLocationType,
+}: {
+  details: ValidationResult["details"];
+  department: string | null;
+  userLocationType: "CAMPUS" | "FIELDTRIP" | null;
+}) {
+  if (!details) return null;
+
+  return (
+    <View style={styles.locationStatusCard}>
+      {/* Session Status */}
+      <View style={styles.statusRow}>
+        <FontAwesome6
+          name="clock"
+          size={16}
+          color={
+            details.isWithinWorkingHours
+              ? brutalistColors.black
+              : brutalistColors.error
+          }
+        />
+        <Text
+          style={[
+            styles.statusText,
+            !details.isWithinWorkingHours && { color: brutalistColors.error },
+          ]}
+        >
+          {details.currentSession === "OUTSIDE"
+            ? "Outside Working Hours"
+            : `${details.currentSession} Session`}
+        </Text>
+      </View>
+
+      {/* Campus & Department Status (only for CAMPUS user) */}
+      {userLocationType === "CAMPUS" && (
+        <>
+          <View style={styles.statusRow}>
+            <FontAwesome6
+              name="university"
+              size={16}
+              color={details.isInsideIIT ? brutalistColors.black : brutalistColors.error}
+            />
+            <Text
+              style={[
+                styles.statusText,
+                !details.isInsideIIT && { color: brutalistColors.error },
+              ]}
+            >
+              {details.isInsideIIT
+                ? "Inside IIT Guwahati"
+                : "Outside IIT Guwahati"}
+            </Text>
+          </View>
+
+          <View style={styles.statusRow}>
+            <FontAwesome6
+              name="building"
+              size={16}
+              color={
+                details.isInsideDepartment
+                  ? brutalistColors.black
+                  : brutalistColors.error
+              }
+            />
+            <Text
+              style={[
+                styles.statusText,
+                !details.isInsideDepartment && { color: brutalistColors.error },
+              ]}
+            >
+              {details.isInsideDepartment
+                ? `Inside ${department}`
+                : `Outside ${department}`}
+            </Text>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
 
 function SessionTimeIndicator() {
   const [currentSession, setCurrentSession] = useState<
@@ -317,7 +420,30 @@ export function HomeView({
   totalPhotos,
   todayAttendanceMarked = false,
 }: HomeViewProps) {
-  const { userLocationType } = useAttendanceStore();
+  const { userLocationType, department } = useAttendanceStore();
+  const geofence = useGeofence(userLocationType);
+  const [validationStatus, setValidationStatus] =
+    useState<ValidationResult | null>(null);
+
+  // Check validation status periodically
+  useEffect(() => {
+    const checkValidation = () => {
+      if (geofence.userPos && department) {
+        const validation = attendanceValidation.validateAttendance(
+          geofence.userPos,
+          department,
+          userLocationType
+        );
+        setValidationStatus(validation);
+      }
+    };
+
+    checkValidation();
+    const interval = setInterval(checkValidation, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [geofence.userPos, department, userLocationType]);
+
   const attendanceRecords = useAttendanceStore(
     (state) => state.attendanceRecords
   );
@@ -495,6 +621,7 @@ export function HomeView({
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header Card */}
       <Animated.View
         entering={FadeInDown.delay(100).springify()}
         style={styles.headerCard}
@@ -502,36 +629,7 @@ export function HomeView({
         <View style={styles.headerContent}>
           <View style={styles.headerTextContainer}>
             <Text style={styles.greeting}>GOOD {getTimeOfDay()}!</Text>
-            <Text style={styles.headerTitle}>
-              MARK YOUR ATTENDANCE
-              {userLocationType === "FIELDTRIP" && (
-                <Text style={styles.fieldTripIndicator}> (FIELD TRIP)</Text>
-              )}
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              {userLocationType === "FIELDTRIP"
-                ? "📍 OUTSIDE IIT (FIELD TRIP)"
-                : "📍 IIT GUWAHATI - DEPARTMENT BUILDING"}
-            </Text>
-            <View style={styles.locationTypeBadge}>
-              <Text style={styles.locationTypeText}>
-                MODE:{" "}
-                {userLocationType === "FIELDTRIP" ? "FIELD TRIP" : "ABSOLUTE"}
-              </Text>
-            </View>
-            {userLocationType === "FIELDTRIP" && (
-              <View style={styles.fieldTripNotice}>
-                <FontAwesome6
-                  name="info-circle"
-                  size={12}
-                  color={brutalistColors.white}
-                />
-                <Text style={styles.fieldTripNoticeText}>
-                  LOCATION WILL BE MARKED AS &quot;OUTSIDE IIT (FIELD
-                  TRIP)&quot;
-                </Text>
-              </View>
-            )}
+            <Text style={styles.headerTitle}>MARK YOUR ATTENDANCE</Text>
           </View>
           <View style={styles.headerIcon}>
             <FontAwesome6
@@ -542,7 +640,30 @@ export function HomeView({
           </View>
         </View>
 
-        <SessionTimeIndicator />
+        {/* Validation Status Display */}
+        {validationStatus?.details && (
+          <>
+            {!validationStatus.isValid && (
+              <View style={styles.cannotMarkBanner}>
+                <FontAwesome6 name="exclamation-triangle" size={16} color={brutalistColors.black}/>
+                <Text style={styles.cannotMarkBannerText}>
+                  CANNOT MARK ATTENDANCE
+                </Text>
+              </View>
+            )}
+
+            <LocationStatusCard
+              details={validationStatus.details}
+              department={department}
+              userLocationType={userLocationType}
+            />
+          </>
+        )}
+
+        {/* Brutalist Warning Message */}
+        {validationStatus && !validationStatus.isValid && validationStatus.reason && (
+          <ValidationErrorCard reason={validationStatus.reason} />
+        )}
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
@@ -620,6 +741,7 @@ export function HomeView({
           onUpload={onUpload}
           uploading={uploading}
           totalPhotos={totalPhotos}
+          canSubmit={validationStatus?.isValid || false}
         />
       </Animated.View>
     </ScrollView>
@@ -638,7 +760,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.offwhite,
   },
-
   brutalistCard: {
     borderWidth: 4,
     borderColor: brutalistColors.black,
@@ -698,6 +819,7 @@ const styles = StyleSheet.create({
     borderColor: brutalistColors.black,
     padding: 16,
     marginTop: 20,
+    backgroundColor: brutalistColors.white,
   },
   statItem: {
     flex: 1,
@@ -869,15 +991,13 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   statusDetails: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: "#F5F5F5",
+    borderWidth: 1,
+    borderColor: "#000000",
+    borderRadius: 8,
     gap: 8,
-    borderTopWidth: 2,
-    borderColor: brutalistColors.lightGray,
-    paddingTop: 8,
-  },
-  statusRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
   },
   statusLabel: {
     fontSize: 14,
@@ -903,24 +1023,58 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textTransform: "uppercase",
   },
-  fieldTripIndicator: {
-    fontSize: 14,
-    color: brutalistColors.warning,
-    fontWeight: "bold",
-  },
-  fieldTripNotice: {
+  statusRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    gap: 12,
   },
-  fieldTripNoticeText: {
-    fontSize: 11,
-    color: brutalistColors.white,
-    opacity: 0.9,
-    fontWeight: "bold",
+  statusText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: brutalistColors.black,
+  },
+  // New styles for Brutalist validation
+  cannotMarkBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: brutalistColors.errorBg,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 16,
+    borderWidth: 2,
+    borderColor: brutalistColors.black,
+  },
+  cannotMarkBannerText: {
+    color: brutalistColors.black,
+    fontSize: 14,
+    fontWeight: "900",
     textTransform: "uppercase",
+  },
+
+  locationStatusCard: {
+    borderWidth: 2,
+    borderColor: brutalistColors.black,
+    backgroundColor: brutalistColors.white,
+    padding: 16,
+    marginTop: -2, // Overlap the banner slightly
+    gap: 12,
+  },
+  validationErrorCard: {
+    borderWidth: 2,
+    borderColor: brutalistColors.black,
+    backgroundColor: brutalistColors.errorBg,
+    padding: 16,
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  validationErrorText: {
+    color: brutalistColors.black,
+    fontSize: 14,
+    fontWeight: "bold",
+    flex: 1,
+    lineHeight: 20,
   },
 });
