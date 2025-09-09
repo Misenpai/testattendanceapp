@@ -137,7 +137,7 @@ class NotificationService {
     const currentMinutes = now.getMinutes();
     const currentTimeInMinutes = currentHours * 60 + currentMinutes;
 
-    // Forenoon session: 9:30 AM - 1:00 PM
+    // Forenoon session: 9:00 AM - 1:00 PM
     const forenoonStart =
       this.SESSION_TIMES.FORENOON_START.hour * 60 +
       this.SESSION_TIMES.FORENOON_START.minute;
@@ -178,13 +178,13 @@ class NotificationService {
       return {
         session: "BEFORE_WORK",
         remainingMinutes: remaining,
-        endTime: "9:30 AM",
+        endTime: "9:00 AM",
       };
     } else {
       return {
         session: "AFTER_WORK",
         remainingMinutes: 0,
-        endTime: "Tomorrow 9:30 AM",
+        endTime: "Tomorrow 9:00 AM",
       };
     }
   }
@@ -391,7 +391,7 @@ class NotificationService {
       body = `Work starts in ${timeUntilWork} at ${sessionInfo.endTime}. Have a great day ahead!`;
     } else {
       title = "🌙 After Hours";
-      body = `Working hours have ended for today. See you tomorrow at 9:30 AM!`;
+      body = `Working hours have ended for today. See you tomorrow at 9:00 AM!`;
     }
 
     await Notifications.scheduleNotificationAsync({

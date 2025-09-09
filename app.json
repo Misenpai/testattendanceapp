@@ -4,28 +4,30 @@
     "slug": "presence",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/playstore.png",
-    "scheme": "testapplication",
+    "icon": "./assets/images/icon-1024-1024.png",
+    "scheme": "presence",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "testattendanceapp",
+      "bundleIdentifier": "presence",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon-1024-1024.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.misenpai.test_application"
+      "package": "com.misenpai.presence"
     },
     "web": {
       "bundler": "metro",
@@ -44,7 +46,19 @@
         }
       ],
       "expo-audio",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#232323",
+          "image": "./assets/images/splash-icon.png",
+          "dark": {
+            "image": "./assets/images/splash-4096-4096.png",
+            "backgroundColor": "#000000"
+          },
+          "imageWidth": 200
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -52,9 +66,15 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c7b33ae9-e0ef-4d6d-a58c-437dade42b6c"
+        "projectId": "815c623c-a271-457f-8e98-d8a929439906"
       }
     },
-    "owner": "misenpai"
+    "owner": "misenpai",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/815c623c-a271-457f-8e98-d8a929439906"
+    }
   }
 }

@@ -496,7 +496,7 @@ export const useAttendanceStore = create<AttendanceState>()(
         const minutes = now.getMinutes();
         const timeInMinutes = hours * 60 + minutes;
 
-        // Forenoon: 9:30 AM to 1:00 PM
+        // Forenoon: 9:00 AM to 1:00 PM
         if (timeInMinutes >= 570 && timeInMinutes < 780) {
           return "FORENOON";
         }

@@ -1,6 +1,7 @@
 import { colors } from "@/constants/colors";
 import { useAuthStore } from "@/store/authStore";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
   Alert,
@@ -48,10 +49,10 @@ export default function LoginScreen() {
             style={styles.logoContainer}
           >
             <View style={styles.logoCircle}>
-              <FontAwesome6
-                name="fingerprint"
-                size={50}
-                color={colors.lightYellow}
+              <Image
+                source={require("../../assets/images/icon-1024-1024.png")}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="cover"
               />
             </View>
             <Text style={styles.brandName}>Attendance System</Text>

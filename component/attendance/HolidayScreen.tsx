@@ -4,10 +4,10 @@ import { Holiday } from "@/services/attendanceCalendarService";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import React from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
@@ -84,7 +84,7 @@ export function HolidayScreen({ holidayInfo }: HolidayScreenProps) {
             <FontAwesome6 name="clock" size={14} color={"#000"} />
             <Text style={styles.tipText}>
               {isWeekend
-                ? "Working hours resume on Monday at 9:30 AM"
+                ? "Working hours resume on Monday at 9:00 AM"
                 : "Regular attendance will resume on the next working day"}
             </Text>
           </View>

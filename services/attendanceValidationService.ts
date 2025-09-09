@@ -77,7 +77,7 @@ export class AttendanceValidationService {
       return { 
         isValid: true, 
         session: "FORENOON",
-        timeInfo: "Forenoon Session (9:30 AM - 1:00 PM)"
+        timeInfo: "Forenoon Session (9:00 AM - 1:00 PM)"
       };
     } else if (currentTimeInMinutes >= afternoonStart && currentTimeInMinutes <= afternoonEnd) {
       return { 
@@ -91,9 +91,9 @@ export class AttendanceValidationService {
         const minutesUntil = forenoonStart - currentTimeInMinutes;
         const hours = Math.floor(minutesUntil / 60);
         const minutes = minutesUntil % 60;
-        nextSession = `Next session starts in ${hours}h ${minutes}m (9:30 AM)`;
+        nextSession = `Next session starts in ${hours}h ${minutes}m (9:00 AM)`;
       } else {
-        nextSession = "Working hours have ended. Next session starts tomorrow at 9:30 AM";
+        nextSession = "Working hours have ended. Next session starts tomorrow at 9:00 AM";
       }
       
       return { 
