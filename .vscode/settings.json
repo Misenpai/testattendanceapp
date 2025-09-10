@@ -26,5 +26,6 @@
     "testapplication",
     "testattendanceapp",
     "xmark"
-  ]
+  ],
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

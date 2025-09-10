@@ -40,5 +40,7 @@ app-example
 
 .env
 
-android
 my-upload-key.keystore
+
+/android
+/iso
