@@ -1,7 +1,6 @@
 import { colors } from "@/constants/colors";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { CameraCapturedPicture } from "expo-camera";
-import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -9,11 +8,11 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { AudioRecording } from "../../types/attendance"; // Add this import
+import { AudioRecording } from "../../types/attendance";
 
 interface ActionButtonsProps {
   photos: CameraCapturedPicture[];
-  audioRecording: AudioRecording | null; // Add this prop
+  audioRecording: AudioRecording | null;
   onTakePhotos: () => void;
   onRetakeAll: () => void;
   onUpload: () => void;
@@ -25,8 +24,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function ActionButtons({
   photos,
-  audioRecording, // Add this parameter
-  onTakePhotos,
+  audioRecording,
   onRetakeAll,
   onUpload,
   uploading,
@@ -39,14 +37,13 @@ export function ActionButtons({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.95);
+    scale.value = withSpring(0.98);
   };
 
   const handlePressOut = () => {
     scale.value = withSpring(1);
   };
 
-  // Update the completion check to include audio
   const isComplete = photos.length === totalPhotos && audioRecording !== null;
 
   return (
@@ -57,113 +54,93 @@ export function ActionButtons({
             onPress={onUpload}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
-            style={[
-              styles.primaryButton,
-              animatedStyle,
-              !isComplete && styles.buttonDisabled,
-            ]}
+            style={[styles.primaryButton, animatedStyle, !isComplete && styles.buttonDisabled]}
             disabled={!isComplete || uploading}
           >
-            <LinearGradient
-              colors={
-                isComplete
-                  ? [colors.success, "#059669"]
-                  : [colors.gray[400], colors.gray[500]]
-              }
-              style={styles.gradientButton}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <View
+              style={[styles.brutalistButton, isComplete ? styles.successButton : styles.disabledButton]}
             >
               <FontAwesome6
                 name={uploading ? "spinner" : "cloud-arrow-up"}
                 size={20}
                 color={colors.white}
               />
-              <Text style={styles.primaryButtonText}>
+              <Text style={styles.brutalistButtonText}>
                 {uploading ? "Uploading..." : "Submit Attendance"}
               </Text>
-            </LinearGradient>
+            </View>
           </AnimatedPressable>
 
           <Pressable onPress={onRetakeAll} style={styles.secondaryButton}>
-            <FontAwesome6
-              name="arrow-rotate-left"
-              size={18}
-              color={colors.error}
-            />
+            <FontAwesome6 name="arrow-rotate-left" size={18} color={colors.black} />
             <Text style={styles.secondaryButtonText}>Retake</Text>
           </Pressable>
         </View>
       )}
-
-
     </View>
   );
 }
 
-// Styles remain the same
 const styles = StyleSheet.create({
   container: {
-    gap: 12,
+    gap: 16,
   },
   buttonGroup: {
-    gap: 12,
+    gap: 16,
   },
   primaryButton: {
-    borderRadius: 14,
-    overflow: "hidden",
-    shadowColor: colors.primary[900],
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    borderWidth: 4,
+    borderColor: colors.black,
+    backgroundColor: colors.black,
+    shadowColor: colors.black,
+    shadowOffset: { width: 6, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 6,
   },
-  gradientButton: {
+  brutalistButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 16,
+    gap: 10,
+    paddingVertical: 18,
     paddingHorizontal: 24,
   },
-  primaryButtonText: {
+  brutalistButtonText: {
     color: colors.white,
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  successButton: {
+    backgroundColor: colors.success,
+  },
+  disabledButton: {
+    backgroundColor: colors.gray[500],
   },
   secondaryButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
     backgroundColor: colors.white,
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: colors.error,
+    borderWidth: 4,
+    borderColor: colors.black,
+    shadowColor: colors.black,
+    shadowOffset: { width: 6, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 6,
   },
   secondaryButtonText: {
-    color: colors.error,
+    color: colors.black,
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "900",
+    textTransform: "uppercase",
   },
   buttonDisabled: {
     opacity: 0.6,
-  },
-  infoCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: colors.warning + "15",
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.warning + "30",
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.gray[700],
   },
 });

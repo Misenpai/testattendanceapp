@@ -1,4 +1,5 @@
 // services/attendanceCalendarService.ts
+import { colors } from "@/constants/colors";
 import { useAuthStore } from "@/store/authStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
@@ -157,8 +158,8 @@ export const getMarkedDates = (
   // 1. Attendance entries - simplified color scheme
   attendanceDates.forEach((item) => {
     const dateStr = item.date.split("T")[0];
-    let dotColor = "#9CA3AF"; // Gray for absent
-    let backgroundColor = "#F3F4F6";
+    let dotColor = colors.error; // Gray for absent
+    let backgroundColor = "#F87171";
     let textColor = "#1F2937";
 
     if (item.present === 1) {

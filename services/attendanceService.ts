@@ -94,6 +94,7 @@ export const uploadAttendanceData = async ({
         form.append("audioDuration", audioRecording.duration.toString());
       }
     }
+    console.log("form data", form)
 
     // Get auth headers
     const authHeaders = useAuthStore.getState().getAuthHeaders();
@@ -105,6 +106,8 @@ export const uploadAttendanceData = async ({
       },
       timeout: 30000,
     });
+
+    console.log("attendance data",data)
 
     return { success: true, id: data.id, data: data.data };
   } catch (e: any) {
