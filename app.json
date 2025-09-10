@@ -13,21 +13,36 @@
       "bundleIdentifier": "presence",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "splash": {
+        "image": "./assets/images/splash-4096-4096.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#232323"
       }
     },
     "android": {
+      "package": "com.misenpai.presence",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon-1024-1024.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
+      "usesCleartextTraffic": true,
       "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.misenpai.presence"
+      "splash": {
+        "image": "./assets/images/splash-4096-4096.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#232323",
+        "dark": {
+          "image": "./assets/images/splash-dark-4096-4096.png",
+          "backgroundColor": "#000000"
+        }
+      }
     },
     "web": {
       "bundler": "metro",
@@ -39,24 +54,24 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ],
-      "expo-audio",
-      "expo-asset",
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#232323",
           "image": "./assets/images/splash-4096-4096.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#232323",
           "dark": {
             "image": "./assets/images/splash-4096-4096.png",
             "backgroundColor": "#000000"
           },
           "imageWidth": 200
+        }
+      ],
+      "expo-audio",
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ],
