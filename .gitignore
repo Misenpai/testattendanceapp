@@ -42,5 +42,5 @@ app-example
 
 my-upload-key.keystore
 
-/android
-/iso
+android/gradle.properties
+android/app/my-upload-key.keystore
