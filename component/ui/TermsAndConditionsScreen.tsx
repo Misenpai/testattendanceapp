@@ -241,8 +241,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   contentContainer: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollContent: { padding: 20, paddingBottom: 40 },
+  scrollView: { flex: 1,marginBottom: 100, },
+  scrollContent: { padding: 16, paddingBottom: 40 },
   section: {
     borderWidth: 3,
     borderColor: colors.black,
@@ -302,6 +302,7 @@ const styles = StyleSheet.create({
   },
   scrollIndicatorText: { fontSize: 14, color: colors.black, fontWeight: "900" },
   buttonContainer: {
+    position: 'absolute',
     padding: 20,
     paddingBottom: Platform.OS === "ios" ? 40 : 20,
     borderTopWidth: 3,

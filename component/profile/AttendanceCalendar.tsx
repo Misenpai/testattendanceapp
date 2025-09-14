@@ -838,6 +838,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.offwhite,
     paddingTop: 16,
+    paddingHorizontal: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -920,6 +921,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderColor: brutalistColors.border,
     paddingBottom: 12,
+    flexWrap: 'wrap',
   },
   badgeContainer: {
     flexDirection: "row",

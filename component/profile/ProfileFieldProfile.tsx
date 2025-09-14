@@ -51,6 +51,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "black",
     padding: 16,
+    overflow: 'hidden',
   },
   inputContent: {
     flexDirection: "row",
@@ -64,5 +65,6 @@ const styles = StyleSheet.create({
     color: "black",
     fontWeight: "600",
     flex: 1,
+    flexWrap: 'wrap',
   },
 });

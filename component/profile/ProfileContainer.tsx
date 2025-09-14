@@ -167,6 +167,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
     paddingVertical: 20,
+    paddingHorizontal: 10,
     borderBottomWidth: 3,
     borderColor: '#000',
   },
@@ -211,6 +212,9 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#000',
     textTransform: 'uppercase',
+    textAlign: 'center',
+    flexWrap: 'wrap',
+    maxWidth: '90%',
   },
   attendanceCard: {
     borderWidth: 3,

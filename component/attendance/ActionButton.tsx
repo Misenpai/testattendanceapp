@@ -100,9 +100,11 @@ export function ActionButtons({
 const styles = StyleSheet.create({
   container: {
     gap: 16,
+    paddingHorizontal: 16,
   },
   buttonGroup: {
     gap: 16,
+    alignItems: 'stretch',
   },
   primaryButton: {
     borderWidth: 4,
@@ -113,6 +115,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 6,
+    alignSelf: 'stretch',
   },
   brutalistButton: {
     flexDirection: "row",
@@ -149,6 +152,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 6,
+    alignSelf: 'stretch',
   },
   secondaryButtonText: {
     color: colors.black,

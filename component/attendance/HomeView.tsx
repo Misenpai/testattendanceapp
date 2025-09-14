@@ -1,12 +1,10 @@
-// component/attendance/HomeView.tsx (Add validation status display)
+import { colors } from "@/constants/colors";
 import { useGeofence } from "@/hooks/useGeofence";
+import { checkoutAttendance } from "@/services/attendanceService";
 import {
   attendanceValidation,
   ValidationResult,
 } from "@/services/attendanceValidationService";
-// ... (keep existing imports)
-import { colors } from "@/constants/colors";
-import { checkoutAttendance } from "@/services/attendanceService";
 import { useAuthStore } from "@/store/authStore";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { CameraCapturedPicture } from "expo-camera";
@@ -43,14 +41,13 @@ const brutalistColors = {
   black: "#000000",
   white: "#FFFFFF",
   error: "#dc2626",
-  errorBg: "#fecaca", // Light red for error backgrounds
+  errorBg: "#fecaca",
   success: "#16a34a",
   warning: "#f97316",
   gray: "#a1a1aa",
   lightGray: "#f4f4f5",
 };
 
-// New Brutalist Validation Error Card Component
 function ValidationErrorCard({ reason }: { reason: string }) {
   return (
     <View style={styles.validationErrorCard}>
@@ -60,7 +57,6 @@ function ValidationErrorCard({ reason }: { reason: string }) {
   );
 }
 
-// New Brutalist Location Status Card Component
 function LocationStatusCard({
   details,
   department,
@@ -74,7 +70,6 @@ function LocationStatusCard({
 
   return (
     <View style={styles.locationStatusCard}>
-      {/* Session Status */}
       <View style={styles.statusRow}>
         <FontAwesome6
           name="clock"
@@ -97,7 +92,6 @@ function LocationStatusCard({
         </Text>
       </View>
 
-      {/* Campus & Department Status (only for CAMPUS user) */}
       {userLocationType === "CAMPUS" && (
         <>
           <View style={styles.statusRow}>
@@ -219,41 +213,43 @@ function CheckoutButton({
   const isButtonDisabled = isCheckedOut || isAfter11PM || disabled;
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.checkoutButton,
-        isButtonDisabled && styles.buttonDisabled,
-        {
-          transform:
-            pressed && !isButtonDisabled
-              ? [{ translateX: 5 }, { translateY: 5 }]
-              : [],
-          shadowColor: isButtonDisabled
-            ? brutalistColors.gray
-            : brutalistColors.error,
-        },
-      ]}
-      onPress={onCheckout}
-      disabled={isButtonDisabled}
-    >
-      <FontAwesome6
-        name={isButtonDisabled ? "check" : "right-from-bracket"}
-        size={20}
-        color={isButtonDisabled ? brutalistColors.gray : brutalistColors.error}
-      />
-      <Text
-        style={[
-          styles.checkoutButtonText,
+    <View style={styles.checkoutButtonContainer}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.checkoutButton,
+          isButtonDisabled && styles.buttonDisabled,
           {
-            color: isButtonDisabled
+            transform:
+              pressed && !isButtonDisabled
+                ? [{ translateX: 5 }, { translateY: 5 }]
+                : [],
+            shadowColor: isButtonDisabled
               ? brutalistColors.gray
               : brutalistColors.error,
           },
         ]}
+        onPress={onCheckout}
+        disabled={isButtonDisabled}
       >
-        {isCheckedOut ? "Done" : isAfter11PM ? "Auto-completed" : "Checkout"}
-      </Text>
-    </Pressable>
+        <FontAwesome6
+          name={isButtonDisabled ? "check" : "right-from-bracket"}
+          size={20}
+          color={isButtonDisabled ? brutalistColors.gray : brutalistColors.error}
+        />
+        <Text
+          style={[
+            styles.checkoutButtonText,
+            {
+              color: isButtonDisabled
+                ? brutalistColors.gray
+                : brutalistColors.error,
+            },
+          ]}
+        >
+          {isCheckedOut ? "Done" : isAfter11PM ? "Auto-completed" : "Checkout"}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -345,7 +341,7 @@ function AttendanceStatusCard({ attendance }: { attendance: any }) {
         )}
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>Location:</Text>
-          <Text style={styles.statusValue}>
+          <Text style={styles.statusValue} numberOfLines={2} ellipsizeMode="tail">
             {attendance.takenLocation || "N/A"}
           </Text>
         </View>
@@ -390,13 +386,10 @@ function AttendanceMarkedCard({
         </View>
       </View>
 
-      {/* Session Time Indicator */}
       <SessionTimeIndicator />
 
-      {/* Attendance Status */}
       {todayRecord && <AttendanceStatusCard attendance={todayRecord} />}
 
-      {/* Checkout Button */}
       {todayRecord && (
         <CheckoutButton
           onCheckout={onCheckout}
@@ -425,7 +418,6 @@ export function HomeView({
   const [validationStatus, setValidationStatus] =
     useState<ValidationResult | null>(null);
 
-  // Check validation status periodically
   useEffect(() => {
     const checkValidation = () => {
       if (geofence.userPos && department) {
@@ -439,7 +431,7 @@ export function HomeView({
     };
 
     checkValidation();
-    const interval = setInterval(checkValidation, 5000); // Check every 5 seconds
+    const interval = setInterval(checkValidation, 5000);
 
     return () => clearInterval(interval);
   }, [geofence.userPos, department, userLocationType]);
@@ -462,7 +454,6 @@ export function HomeView({
     refreshAttendanceStatus();
   }, []);
 
-  // In component/attendance/HomeView.tsx, update handleCheckout:
   const handleCheckout = async () => {
     Alert.alert(
       "CHECKOUT CONFIRMATION",
@@ -473,12 +464,12 @@ export function HomeView({
           text: "CHECKOUT",
           onPress: async () => {
             try {
-              const { employeeNumber } = useAuthStore.getState(); // Changed from userName
+              const { employeeNumber } = useAuthStore.getState();
               if (!employeeNumber) {
                 Alert.alert("Error", "Please login to checkout");
                 return;
               }
-              const result = await checkoutAttendance(employeeNumber); // Pass employeeNumber
+              const result = await checkoutAttendance(employeeNumber);
               if (result.success) {
                 Alert.alert("Success", "Checkout successful!");
                 await useAttendanceStore
@@ -621,7 +612,6 @@ export function HomeView({
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header Card */}
       <Animated.View
         entering={FadeInDown.delay(100).springify()}
         style={styles.headerCard}
@@ -640,7 +630,6 @@ export function HomeView({
           </View>
         </View>
 
-        {/* Validation Status Display */}
         {validationStatus?.details && (
           <>
             {!validationStatus.isValid && (
@@ -660,7 +649,6 @@ export function HomeView({
           </>
         )}
 
-        {/* Brutalist Warning Message */}
         {validationStatus && !validationStatus.isValid && validationStatus.reason && (
           <ValidationErrorCard reason={validationStatus.reason} />
         )}
@@ -809,6 +797,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: brutalistColors.black,
     textTransform: "uppercase",
+    flexWrap: 'wrap',
+    maxWidth: '100%',
   },
   headerIcon: {
     marginLeft: 16,
@@ -947,8 +937,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textTransform: "uppercase",
   },
-  checkoutButton: {
+  checkoutButtonContainer: {
+    alignItems: 'center',
     marginTop: 16,
+  },
+  checkoutButton: {
     borderWidth: 3,
     backgroundColor: brutalistColors.white,
     flexDirection: "row",
@@ -957,7 +950,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     paddingHorizontal: 24,
-    shadowColor: brutalistColors.error,
+    minWidth: 180,
     shadowOffset: { width: 5, height: 5 },
     shadowOpacity: 1,
     shadowRadius: 0,
@@ -984,11 +977,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     marginBottom: 12,
+    flexWrap: 'wrap',
   },
   statusTitle: {
     fontSize: 16,
     fontWeight: "900",
     textTransform: "uppercase",
+    flex: 1,
+    flexWrap: 'wrap',
   },
   statusDetails: {
     marginTop: 12,
@@ -999,16 +995,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 8,
   },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
   statusLabel: {
     fontSize: 14,
     color: brutalistColors.gray,
     fontWeight: "bold",
     textTransform: "uppercase",
+    minWidth: 90,
   },
   statusValue: {
     fontSize: 14,
     fontWeight: "600",
     color: brutalistColors.black,
+    flex: 1,
+    flexWrap: 'wrap',
   },
   locationTypeBadge: {
     backgroundColor: brutalistColors.white,
@@ -1023,17 +1027,11 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textTransform: "uppercase",
   },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
   statusText: {
     fontSize: 16,
     fontWeight: "600",
     color: brutalistColors.black,
   },
-  // New styles for Brutalist validation
   cannotMarkBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -1051,13 +1049,12 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textTransform: "uppercase",
   },
-
   locationStatusCard: {
     borderWidth: 2,
     borderColor: brutalistColors.black,
     backgroundColor: brutalistColors.white,
     padding: 16,
-    marginTop: -2, // Overlap the banner slightly
+    marginTop: -2,
     gap: 12,
   },
   validationErrorCard: {

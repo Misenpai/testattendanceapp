@@ -85,7 +85,7 @@ export const photoGridStyles = StyleSheet.create({
 });
 
 export const audioStyles = StyleSheet.create({
-  // Styles for AudioPlayer & AudioControls
+  
   preview: {
     width: "100%",
     borderWidth: 4,
@@ -202,7 +202,7 @@ export const cameraStyles = StyleSheet.create({
 });
 
 export const audioRecorderStyles = StyleSheet.create({
-  // Styles for AudioRecorder
+  
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -210,7 +210,7 @@ export const audioRecorderStyles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: 60, // Adjust for safe area
+    paddingTop: 60, 
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 4,
@@ -316,7 +316,7 @@ export const audioRecorderStyles = StyleSheet.create({
     backgroundColor: "#000",
   },
   stopButton: {
-    backgroundColor: "#FF3B30", // Red
+    backgroundColor: "#FF3B30", 
   },
   playbackControls: {
     flexDirection: "row",
@@ -411,32 +411,34 @@ export const permissionStyles = StyleSheet.create({
 
 
 export const mapCardStyles = StyleSheet.create({
-  // Brutalist login-like container
+  
   container: {
     margin: 20,
     marginBottom: 10,
-    borderWidth: 2,           // thick border
-    borderColor: "#000",      // harsh black outline
-    backgroundColor: "#fff",  // flat white fill
+    borderWidth: 2,           
+    borderColor: "#000",      
+    backgroundColor: "#fff",  
     shadowColor: "#000",
-    shadowOffset: { width: 6, height: 6 }, // offset shadow for brutalist effect
+    shadowOffset: { width: 6, height: 6 }, 
     shadowOpacity: 0,
     shadowRadius: 0,
     elevation: 8,
+    overflow: 'hidden',
   },
 
   mapContainer: {
     height: 300,
     position: "relative",
-    borderBottomWidth: 2,     // brutal separation
+    borderBottomWidth: 2,     
     borderColor: "#000",
+    overflow: 'hidden',
   },
 
   expandButton: {
     position: "absolute",
     bottom: 10,
     left: 10,
-    backgroundColor: "#000",  // solid black
+    backgroundColor: "#000",  
     padding: 8,
     width: 40,
     height: 40,
@@ -444,14 +446,14 @@ export const mapCardStyles = StyleSheet.create({
     borderColor: "#000",
     justifyContent: "center",
     alignItems: "center",
-    // no rounded corners → brutalist block
+    zIndex: 10,
   },
 
   recenterButton: {
     position: "absolute",
     bottom: 12,
     right: 12,
-    backgroundColor: "#fff",  // inverted brutalist style
+    backgroundColor: "#fff",  
     padding: 10,
     width: 44,
     height: 44,
@@ -579,7 +581,7 @@ export const attendanceContainerStyles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 20,
   },
-  // Field trip styles
+  
   fieldTripContainer: {
     flex: 1,
     justifyContent: 'center',

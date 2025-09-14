@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 250,
     position: "relative",
+    alignSelf: 'center',
   },
   photoWrapper: {
     position: "relative",
@@ -115,6 +116,7 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: brutalistColors.black,
     borderStyle: "dashed",
+    minHeight: 200,
   },
   emptyText: {
     marginTop: 12,
