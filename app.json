@@ -85,9 +85,7 @@
       }
     },
     "owner": "misenpai",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/815c623c-a271-457f-8e98-d8a929439906"
     }

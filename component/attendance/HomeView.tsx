@@ -51,7 +51,11 @@ const brutalistColors = {
 function ValidationErrorCard({ reason }: { reason: string }) {
   return (
     <View style={styles.validationErrorCard}>
-      <FontAwesome6 name="question-circle" size={20} color={brutalistColors.error} />
+      <FontAwesome6
+        name="question-circle"
+        size={20}
+        color={brutalistColors.error}
+      />
       <Text style={styles.validationErrorText}>{reason}</Text>
     </View>
   );
@@ -98,7 +102,11 @@ function LocationStatusCard({
             <FontAwesome6
               name="university"
               size={16}
-              color={details.isInsideIIT ? brutalistColors.black : brutalistColors.error}
+              color={
+                details.isInsideIIT
+                  ? brutalistColors.black
+                  : brutalistColors.error
+              }
             />
             <Text
               style={[
@@ -218,35 +226,58 @@ function CheckoutButton({
         style={({ pressed }) => [
           styles.checkoutButton,
           isButtonDisabled && styles.buttonDisabled,
+          isCheckedOut && styles.checkedOutButton,
+          isAfter11PM && styles.autoCompletedButton,
           {
-            transform:
-              pressed && !isButtonDisabled
-                ? [{ translateX: 5 }, { translateY: 5 }]
-                : [],
+            transform: [
+              {
+                scale: pressed && !isButtonDisabled ? 0.98 : 1,
+              },
+            ],
             shadowColor: isButtonDisabled
               ? brutalistColors.gray
-              : brutalistColors.error,
+              : isCheckedOut
+                ? brutalistColors.success
+                : brutalistColors.error,
           },
         ]}
         onPress={onCheckout}
         disabled={isButtonDisabled}
+        android_ripple={{
+          color: isButtonDisabled
+            ? brutalistColors.gray
+            : brutalistColors.error,
+          borderless: false,
+        }}
       >
-        <FontAwesome6
-          name={isButtonDisabled ? "check" : "right-from-bracket"}
-          size={20}
-          color={isButtonDisabled ? brutalistColors.gray : brutalistColors.error}
-        />
+        {/* Only show icon for non-checked-out states */}
+        {!isCheckedOut && (
+          <FontAwesome6
+            name={isAfter11PM ? "clock" : "arrow-right-to-bracket"}
+            size={20}
+            color={
+              isButtonDisabled ? brutalistColors.gray : brutalistColors.error
+            }
+            style={{ marginRight: 10 }}
+          />
+        )}
         <Text
           style={[
             styles.checkoutButtonText,
             {
               color: isButtonDisabled
                 ? brutalistColors.gray
-                : brutalistColors.error,
+                : isCheckedOut
+                  ? brutalistColors.success
+                  : brutalistColors.error,
             },
           ]}
         >
-          {isCheckedOut ? "Done" : isAfter11PM ? "Auto-completed" : "Checkout"}
+          {isCheckedOut
+            ? "Checked Out"
+            : isAfter11PM
+              ? "Auto-completed"
+              : "Check Out"}
         </Text>
       </Pressable>
     </View>
@@ -271,8 +302,8 @@ function AttendanceStatusCard({ attendance }: { attendance: any }) {
         attendance.sessionType === "FORENOON"
           ? "Forenoon"
           : attendance.sessionType === "AFTERNOON"
-          ? "Afternoon"
-          : "Unknown";
+            ? "Afternoon"
+            : "Unknown";
       return `Checked in - ${sessionText} Session`;
     }
 
@@ -341,7 +372,11 @@ function AttendanceStatusCard({ attendance }: { attendance: any }) {
         )}
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>Location:</Text>
-          <Text style={styles.statusValue} numberOfLines={2} ellipsizeMode="tail">
+          <Text
+            style={styles.statusValue}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
             {attendance.takenLocation || "N/A"}
           </Text>
         </View>
@@ -424,7 +459,7 @@ export function HomeView({
         const validation = attendanceValidation.validateAttendance(
           geofence.userPos,
           department,
-          userLocationType
+          userLocationType,
         );
         setValidationStatus(validation);
       }
@@ -437,12 +472,12 @@ export function HomeView({
   }, [geofence.userPos, department, userLocationType]);
 
   const attendanceRecords = useAttendanceStore(
-    (state) => state.attendanceRecords
+    (state) => state.attendanceRecords,
   );
 
   const todayDateString = new Date().toISOString().split("T")[0];
   const todayRecord = attendanceRecords.find(
-    (record) => record.date === todayDateString
+    (record) => record.date === todayDateString,
   );
 
   useEffect(() => {
@@ -484,7 +519,7 @@ export function HomeView({
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -634,7 +669,11 @@ export function HomeView({
           <>
             {!validationStatus.isValid && (
               <View style={styles.cannotMarkBanner}>
-                <FontAwesome6 name="exclamation-triangle" size={16} color={brutalistColors.black}/>
+                <FontAwesome6
+                  name="exclamation-triangle"
+                  size={16}
+                  color={brutalistColors.black}
+                />
                 <Text style={styles.cannotMarkBannerText}>
                   CANNOT MARK ATTENDANCE
                 </Text>
@@ -649,9 +688,11 @@ export function HomeView({
           </>
         )}
 
-        {validationStatus && !validationStatus.isValid && validationStatus.reason && (
-          <ValidationErrorCard reason={validationStatus.reason} />
-        )}
+        {validationStatus &&
+          !validationStatus.isValid &&
+          validationStatus.reason && (
+            <ValidationErrorCard reason={validationStatus.reason} />
+          )}
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
@@ -797,8 +838,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: brutalistColors.black,
     textTransform: "uppercase",
-    flexWrap: 'wrap',
-    maxWidth: '100%',
+    flexWrap: "wrap",
+    maxWidth: "100%",
   },
   headerIcon: {
     marginLeft: 16,
@@ -938,33 +979,40 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   checkoutButtonContainer: {
-    alignItems: 'center',
-    marginTop: 16,
+    marginVertical: 16,
+    alignItems: "center",
   },
   checkoutButton: {
-    borderWidth: 3,
-    backgroundColor: brutalistColors.white,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    minWidth: 180,
-    shadowOffset: { width: 5, height: 5 },
+    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: brutalistColors.error,
+    borderRadius: 4,
+    shadowOffset: { width: 4, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 0,
-    elevation: 5,
+    elevation: 3,
   },
   checkoutButtonText: {
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: 18,
+    fontWeight: "bold",
     textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   buttonDisabled: {
-    backgroundColor: brutalistColors.lightGray,
     borderColor: brutalistColors.gray,
     shadowColor: brutalistColors.gray,
+  },
+  checkedOutButton: {
+    borderColor: brutalistColors.success,
+  },
+  autoCompletedButton: {
+    borderColor: brutalistColors.warning,
+    shadowColor: brutalistColors.warning,
   },
   statusCard: {
     backgroundColor: brutalistColors.white,
@@ -977,14 +1025,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     marginBottom: 12,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   statusTitle: {
     fontSize: 16,
     fontWeight: "900",
     textTransform: "uppercase",
     flex: 1,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   statusDetails: {
     marginTop: 12,
@@ -1012,7 +1060,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: brutalistColors.black,
     flex: 1,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   locationTypeBadge: {
     backgroundColor: brutalistColors.white,

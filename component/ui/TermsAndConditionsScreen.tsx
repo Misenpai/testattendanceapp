@@ -41,7 +41,7 @@ export function TermsAndConditionsScreen({
 
   const handleContentSizeChange = (
     contentWidth: number,
-    contentHeight: number
+    contentHeight: number,
   ) => {
     const screenContentHeight = screenHeight - 300;
     setIsScrollable(contentHeight > screenContentHeight);
@@ -55,7 +55,7 @@ export function TermsAndConditionsScreen({
       Alert.alert(
         "PLEASE READ TERMS",
         "Scroll to the bottom and read all terms and conditions before accepting.",
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
       return;
     }
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   contentContainer: { flex: 1 },
-  scrollView: { flex: 1,marginBottom: 100, },
+  scrollView: { flex: 1, marginBottom: 100 },
   scrollContent: { padding: 16, paddingBottom: 40 },
   section: {
     borderWidth: 3,
@@ -302,7 +302,10 @@ const styles = StyleSheet.create({
   },
   scrollIndicatorText: { fontSize: 14, color: colors.black, fontWeight: "900" },
   buttonContainer: {
-    position: 'absolute',
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 20,
     paddingBottom: Platform.OS === "ios" ? 40 : 20,
     borderTopWidth: 3,
