@@ -17,8 +17,8 @@ export function useAudio() {
   const [currentRecording, setCurrentRecording] = useState<AudioRecording | null>(null);
   const [shouldPlay, setShouldPlay] = useState(false);
 
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const recorderState = useAudioRecorderState(audioRecorder);
+  const audioRecorder = useAudioRecorder({ ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true });
+  const recorderState = useAudioRecorderState(audioRecorder, 100);
 
   const audioPlayer = useAudioPlayer(currentRecording?.uri ?? undefined);
   const playerStatus = useAudioPlayerStatus(audioPlayer);
@@ -85,9 +85,10 @@ export function useAudio() {
   const stopRecording = async () => {
     try {
       await audioRecorder.stop();
-      const uri = audioRecorder.uri;
+      const status = audioRecorder.getStatus();
+      const uri = status.url;
       if (uri) {
-        const recording = { uri };
+        const recording = { uri, duration: (status.durationMillis || 0) / 1000 };
         setCurrentRecording(recording);
         return recording;
       }
@@ -177,6 +178,7 @@ export function useAudio() {
     recorderState,
     isPlaying,
     currentRecording,
+    playerStatus,
     startRecording,
     stopRecording,
     playAudio,

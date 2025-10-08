@@ -205,7 +205,6 @@ export const cameraStyles = StyleSheet.create({
 });
 
 export const audioRecorderStyles = StyleSheet.create({
-  
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -213,7 +212,7 @@ export const audioRecorderStyles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: 60, 
+    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 4,
@@ -255,19 +254,15 @@ export const audioRecorderStyles = StyleSheet.create({
     borderWidth: 4,
     borderColor: "#000",
     backgroundColor: "#fff",
-    flexDirection: "row-reverse",
+    flexDirection: "row",
     alignItems: "center",
     overflow: "hidden",
-    paddingHorizontal: 10,
     marginVertical: 20,
   },
   waveform: {
-    display: "flex",
     flexDirection: "row",
-    overflow: "hidden",
     gap: 3,
     alignItems: "center",
-    minWidth: 50,
   },
   durationContainer: {
     flexDirection: "row",
@@ -319,7 +314,7 @@ export const audioRecorderStyles = StyleSheet.create({
     backgroundColor: "#000",
   },
   stopButton: {
-    backgroundColor: "#FF3B30", 
+    backgroundColor: "#FF3B30",
   },
   playbackControls: {
     flexDirection: "row",
@@ -1347,29 +1342,7 @@ export const attendancePhotoGridStyles = StyleSheet.create({
   },
 });
 
-export const attendanceAudioRecorderStyles = StyleSheet.create({
-  ...audioRecorderStyles,
-  waveformContainer: {
-    height: 120,
-    borderWidth: 4,
-    borderColor: "#000",
-    backgroundColor: "#fff",
-    marginVertical: 20,
-    overflow: 'hidden',
-  },
-  waveformScrollContainer: {
-    flex: 1,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  waveform: {
-    flexDirection: 'row',
-    gap: 3,
-    alignItems: 'center',
-    maxWidth: MAX_WAVEFORM_WIDTH,
-  },
-});
+export const attendanceAudioRecorderStyles = audioRecorderStyles;
 
 export const cameraViewStyles = StyleSheet.create({
   container: {

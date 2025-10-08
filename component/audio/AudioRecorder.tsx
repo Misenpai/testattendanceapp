@@ -1,15 +1,10 @@
 import { attendanceAudioRecorderStyles } from "@/constants/style";
 import { useAudio } from "@/hooks/useAudio";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Dimensions, Pressable, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Dimensions, Pressable, ScrollView, Text, View, ViewStyle } from "react-native";
 import Animated, {
-  ReduceMotion,
-  SlideInRight,
-  ZoomIn,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+  ZoomIn
 } from "react-native-reanimated";
 import { AudioRecording } from "../../types/attendance";
 
@@ -20,29 +15,21 @@ interface AudioRecorderProps {
 
 const { width: screenWidth } = Dimensions.get('window');
 const MAX_WAVEFORM_WIDTH = screenWidth - 60;
-const WAVEFORM_ITEM_WIDTH = 12;
-const MAX_VISIBLE_BARS = Math.floor(MAX_WAVEFORM_WIDTH / WAVEFORM_ITEM_WIDTH);
+const WAVEFORM_BAR_WIDTH = 3;
+const WAVEFORM_GAP = 3;
+const WAVEFORM_ITEM_WIDTH = WAVEFORM_BAR_WIDTH + WAVEFORM_GAP;
 
 export function AudioRecorder({
   onBack,
   onRecordingComplete,
 }: AudioRecorderProps) {
   const audio = useAudio();
-  const [waveformData, setWaveformData] = useState<number[]>([0]);
+  const [waveformData, setWaveformData] = useState<number[]>([]);
   const [hasRecording, setHasRecording] = useState(false);
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [playbackDuration, setPlaybackDuration] = useState(0);
 
-  const waveformRef = useRef({
-    data: [0],
-    isRecording: false,
-    originalData: [0],
-    playbackStartTime: 0,
-  });
-  const width = useSharedValue(10);
-  const intervalRef = useRef<number | null>(null);
-  const playbackIntervalRef = useRef<number | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const getFormattedDate = () => {
     const today = new Date();
@@ -74,136 +61,27 @@ export function AudioRecorder({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const customEasing = (value: number) => {
-    "worklet";
-    return value;
-  };
-
-  const waveformStyle = useAnimatedStyle(() => {
-    return {
-      width: withTiming(Math.min(width.value, MAX_WAVEFORM_WIDTH), {
-        duration: 100,
-        easing: customEasing,
-        reduceMotion: ReduceMotion.Never,
-      }),
-    };
-  });
-
-  const startWaveformRecording = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+  useEffect(() => {
+    if (audio.playerStatus?.isLoaded) {
+      const currentTime = audio.playerStatus.currentTime ?? 0;
+      const duration = audio.playerStatus.duration ?? 1;
+      setPlaybackProgress(currentTime / duration);
     }
-    
-    intervalRef.current = setInterval(() => {
-      if (waveformRef.current.isRecording) {
-        const baseLevel = 20;
-        const randomVariation = Math.random() * 40;
-        const randomValue = baseLevel + randomVariation;
-
-        let newData = [...waveformRef.current.data, randomValue];
-        
-        if (newData.length > MAX_VISIBLE_BARS) {
-          newData = newData.slice(-MAX_VISIBLE_BARS);
-        }
-        
-        waveformRef.current.data = newData;
-        setWaveformData(newData);
-        
-        const newWidth = Math.min(width.value + WAVEFORM_ITEM_WIDTH, MAX_WAVEFORM_WIDTH);
-        width.value = newWidth;
-      }
-    }, 100);
-  }, [width]);
-
-  const stopWaveformRecording = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, []);
-
-  const stopWaveformPlayback = useCallback(() => {
-    if (playbackIntervalRef.current) {
-      clearInterval(playbackIntervalRef.current);
-      playbackIntervalRef.current = null;
-    }
-  }, []);
-
-  const startWaveformPlayback = useCallback(() => {
-    if (playbackIntervalRef.current) {
-      clearInterval(playbackIntervalRef.current);
-    }
-
-    const originalData = waveformRef.current.originalData;
-    const totalDuration = originalData.length * 100;
-    waveformRef.current.playbackStartTime = Date.now();
-
-    setPlaybackDuration(totalDuration / 1000);
-    setWaveformData([0]);
-    width.value = 10;
-
-    playbackIntervalRef.current = setInterval(() => {
-      if (audio.isPlaying) {
-        const elapsed = Date.now() - waveformRef.current.playbackStartTime;
-        const progress = Math.min(elapsed / totalDuration, 1);
-        const samplesToShow = Math.floor(progress * originalData.length);
-
-        if (samplesToShow > 0) {
-          const currentData = originalData.slice(0, samplesToShow);
-          setWaveformData(currentData);
-          const newWidth = Math.min(10 + samplesToShow * WAVEFORM_ITEM_WIDTH, MAX_WAVEFORM_WIDTH);
-          width.value = newWidth;
-        }
-
-        setPlaybackProgress(progress);
-
-        if (progress >= 1) {
-          stopWaveformPlayback();
-          setPlaybackProgress(0);
-          setTimeout(() => {
-            setWaveformData(originalData);
-            const finalWidth = Math.min(10 + originalData.length * WAVEFORM_ITEM_WIDTH, MAX_WAVEFORM_WIDTH);
-            width.value = finalWidth;
-          }, 200);
-        }
-      }
-    }, 50);
-  }, [audio.isPlaying, width, stopWaveformPlayback]);
+  }, [audio.playerStatus]);
 
   useEffect(() => {
-    if (audio.recorderState.isRecording && !waveformRef.current.isRecording) {
-      waveformRef.current.isRecording = true;
-      startWaveformRecording();
-    } else if (
-      !audio.recorderState.isRecording &&
-      waveformRef.current.isRecording
-    ) {
-      waveformRef.current.isRecording = false;
-      stopWaveformRecording();
-      if (audio.currentRecording) {
-        setHasRecording(true);
-        waveformRef.current.originalData = [...waveformRef.current.data];
-      }
+    if (audio.recorderState.isRecording && audio.recorderState.metering !== undefined) {
+      const normalized = Math.max(0, (audio.recorderState.metering + 160) / 160);
+      const amplitude = normalized * 60; // Scale to similar range as before
+      setWaveformData((prev) => [...prev, amplitude]);
     }
-  }, [
-    audio.recorderState.isRecording,
-    audio.currentRecording,
-    startWaveformRecording,
-    stopWaveformRecording,
-  ]);
+  }, [audio.recorderState]);
 
   useEffect(() => {
-    if (audio.isPlaying && hasRecording) {
-      startWaveformPlayback();
-    } else {
-      stopWaveformPlayback();
+    if (audio.recorderState.isRecording) {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
     }
-  }, [
-    audio.isPlaying,
-    hasRecording,
-    startWaveformPlayback,
-    stopWaveformPlayback,
-  ]);
+  }, [waveformData.length, audio.recorderState.isRecording]);
 
   useEffect(() => {
     let durationInterval: number | null = null;
@@ -218,7 +96,6 @@ export function AudioRecorder({
         clearInterval(durationInterval);
       }
     }
-
     return () => {
       if (durationInterval) {
         clearInterval(durationInterval);
@@ -227,22 +104,15 @@ export function AudioRecorder({
   }, [audio.recorderState.isRecording]);
 
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-      if (playbackIntervalRef.current) {
-        clearInterval(playbackIntervalRef.current);
-      }
-    };
-  }, []);
+    if (!audio.recorderState.isRecording && audio.currentRecording) {
+      setHasRecording(true);
+      // Do not overwrite with potentially incorrect duration from recording object
+    }
+  }, [audio.recorderState.isRecording, audio.currentRecording]);
 
   const handleStartRecording = async () => {
     try {
-      setWaveformData([0]);
-      waveformRef.current.data = [0];
-      waveformRef.current.originalData = [0];
-      width.value = 10;
+      setWaveformData([]);
       setHasRecording(false);
       setRecordingDuration(0);
       setPlaybackProgress(0);
@@ -256,12 +126,7 @@ export function AudioRecorder({
     try {
       const recording = await audio.stopRecording();
       if (recording) {
-        const recordingWithDuration: AudioRecording = {
-          ...recording,
-          duration: Math.floor(recordingDuration),
-        };
-        audio.setCurrentRecording(recordingWithDuration);
-        return recordingWithDuration;
+        return recording;
       }
     } catch (error) {
       console.log("Recording stop error:", error);
@@ -272,11 +137,7 @@ export function AudioRecorder({
   const handlePlayRecording = async () => {
     try {
       if (audio.currentRecording) {
-        if (audio.isPlaying) {
-          await audio.stopAudio();
-        } else {
-          await audio.playAudio(audio.currentRecording);
-        }
+        await audio.playAudio(audio.currentRecording);
       }
     } catch (error) {
       console.log("Playback error:", error);
@@ -285,26 +146,27 @@ export function AudioRecorder({
 
   const handleRetake = () => {
     setHasRecording(false);
-    setWaveformData([0]);
-    waveformRef.current.data = [0];
-    waveformRef.current.originalData = [0];
-    width.value = 10;
+    setWaveformData([]);
     setRecordingDuration(0);
     setPlaybackProgress(0);
     audio.setCurrentRecording(null);
-    stopWaveformRecording();
-    stopWaveformPlayback();
   };
 
   const handleComplete = () => {
     if (audio.currentRecording) {
-      const recordingWithDuration: AudioRecording = {
-        ...audio.currentRecording,
-        duration: Math.floor(recordingDuration),
-      };
-      onRecordingComplete(recordingWithDuration);
+      // Use timer-based duration if recording duration is 0
+      const finalDuration = audio.currentRecording.duration! > 0 ? audio.currentRecording.duration : recordingDuration;
+      console.log("duration : ",audio.currentRecording.duration!)
+      onRecordingComplete({ ...audio.currentRecording, duration: finalDuration });
     }
   };
+
+  const contentContainerStyle = useMemo<ViewStyle>(() => ({
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: waveformData.length * WAVEFORM_ITEM_WIDTH < MAX_WAVEFORM_WIDTH ? 'center' as const : 'flex-start' as const,
+    paddingHorizontal: 10,
+  }), [waveformData.length]);
 
   return (
     <View style={attendanceAudioRecorderStyles.container}>
@@ -323,11 +185,13 @@ export function AudioRecorder({
         </View>
 
         <View style={attendanceAudioRecorderStyles.waveformContainer}>
-          <View style={attendanceAudioRecorderStyles.waveformScrollContainer}>
-            <Animated.View
-              entering={SlideInRight}
-              style={[attendanceAudioRecorderStyles.waveform, waveformStyle]}
-            >
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={contentContainerStyle}
+          >
+            <View style={attendanceAudioRecorderStyles.waveform}>
               {waveformData.map((amplitude, index) => (
                 <Animated.View
                   key={index}
@@ -344,21 +208,19 @@ export function AudioRecorder({
                       ? "#000"
                       : "#ccc",
                     opacity: audio.isPlaying
-                      ? index / waveformData.length <= playbackProgress
-                        ? 1
-                        : 0.3
+                      ? (index / waveformData.length < playbackProgress ? 1 : 0.3)
                       : 1,
                   }}
                 />
               ))}
-            </Animated.View>
-          </View>
+            </View>
+          </ScrollView>
         </View>
 
         <View style={attendanceAudioRecorderStyles.durationContainer}>
           <Text style={attendanceAudioRecorderStyles.durationText}>
             {audio.isPlaying
-              ? formatTime(playbackProgress * playbackDuration)
+              ? formatTime(playbackProgress * recordingDuration)
               : "0:00"}
           </Text>
           <Text style={attendanceAudioRecorderStyles.durationText}>
