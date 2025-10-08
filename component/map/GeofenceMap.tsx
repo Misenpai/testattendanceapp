@@ -1,4 +1,3 @@
-// component/map/GeofenceMap.tsx (assuming file path)
 import { IIT_GUWAHATI_LOCATION } from "@/constants/geofenceLocation";
 import { mapStyles } from "@/constants/style";
 import { LatLng, MapLayer, MapMarker, MapShape } from "@/types/geofence";

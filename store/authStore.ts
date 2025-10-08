@@ -88,14 +88,14 @@ export const useAuthStore = create<AuthState>()(
       refreshTokenTimer: () => {
         const state = get();
 
-        // Clear existing timer
+        
         state.clearAutoLogoutTimer();
 
         if (state.tokenExpiry) {
           const timeUntilExpiry = state.tokenExpiry - Date.now();
 
           if (timeUntilExpiry > 0) {
-            // Set timer to auto-logout when token expires
+            
             const timer = setTimeout(async () => {
               await get().signOut();
               Alert.alert(
@@ -107,9 +107,9 @@ export const useAuthStore = create<AuthState>()(
 
             set({ autoLogoutTimer: timer });
 
-            // Warn user 2 minutes before expiry
+            
             if (timeUntilExpiry > 120000) {
-              // More than 2 minutes
+              
               setTimeout(() => {
                 Alert.alert(
                   "Session Expiring",
@@ -144,7 +144,7 @@ export const useAuthStore = create<AuthState>()(
           const res = await loginUser(username, password);
 
           if (res.success && res.token) {
-          const tokenExpiry = Date.now() + (30 * 60 * 1000); // 30 minutes
+          const tokenExpiry = Date.now() + (30 * 60 * 1000); 
 
             await storeUserData({
               employeeNumber: res.employeeNumber!,
@@ -165,7 +165,7 @@ export const useAuthStore = create<AuthState>()(
 
             useAttendanceStore.getState().setUserId(res.username!);
 
-            // Set department from projects
+            
             if (res.projects && res.projects.length > 0) {
               const department = res.projects[0].department;
               useAttendanceStore.getState().setDepartment(department);

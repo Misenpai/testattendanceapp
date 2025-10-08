@@ -1,7 +1,6 @@
+import { uiButtonStyles } from "@/constants/style";
 import React from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
-import { colors } from "../../constants/colors";
-
+import { Pressable, Text } from "react-native";
 interface ButtonProps {
   title: string;
   onPress: () => void;
@@ -15,9 +14,9 @@ export function Button({
   variant = "primary",
   disabled = false,
 }: ButtonProps) {
-  const buttonStyle = variant === "primary" ? styles.primary : styles.secondary;
+  const buttonStyle = variant === "primary" ? uiButtonStyles.primary : uiButtonStyles.secondary;
   const textStyle =
-    variant === "primary" ? styles.primaryText : styles.secondaryText;
+    variant === "primary" ? uiButtonStyles.primaryText : uiButtonStyles.secondaryText;
 
   return (
     <Pressable
@@ -30,29 +29,3 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  primary: {
-    backgroundColor: colors.primary[500],
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 0,
-    alignItems: "center",
-  },
-  secondary: {
-    backgroundColor: colors.secondary[500],
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    alignItems: "center",
-  },
-  primaryText: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  secondaryText: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: "600",
-  },
-});

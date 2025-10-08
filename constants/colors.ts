@@ -90,3 +90,25 @@ export const colors = {
   lightYellow: "#ffe182",
   lightGreen: "#dcfd00"
 };
+
+export const brutalistColors = {
+  black: "#000000",
+  white: "#FFFFFF",
+  error: "#dc2626",
+  errorBg: "#fecaca",
+  success: "#16a34a",
+  warning: "#f97316",
+  gray: "#a1a1aa",
+  lightGray: "#f4f4f5",
+  background: "#FFFFFF",
+  text: "#000000",
+  border: "#000000",
+  primary: "#000000",
+  present: "#34D399",
+  absent: "#F87171",
+  inProgress: "#f1eabfff",
+  holiday: "#F59E0B",
+  weekend: "#818CF8",
+  fieldTrip: "#F59E0B",
+  disabled: "#D1D5DB",
+};

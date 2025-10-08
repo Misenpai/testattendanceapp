@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const STORAGE_KEY = "app_user_data";
+const STORAGE_KEY = "presence_user_data";
 
 export interface UserData {
   employeeNumber: string;

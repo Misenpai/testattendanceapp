@@ -1,4 +1,3 @@
-// services/attendanceCalendarService.ts
 import { colors } from "@/constants/colors";
 import { useAuthStore } from "@/store/authStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -33,7 +32,7 @@ export interface AttendanceStatistics {
   year: number;
   month?: number;
 }
-// Axios client with auth headers
+
 const createApiClient = () => {
   const authHeaders = useAuthStore.getState().getAuthHeaders();
   return axios.create({
@@ -45,8 +44,7 @@ const createApiClient = () => {
     },
   });
 };
-// Holidays: fetch from /calendar API and cache (per month/year)
-// In attendanceCalendarService.ts:
+
 export const getCachedHolidays = async (
   year: number,
   month: number
@@ -64,9 +62,8 @@ export const getCachedHolidays = async (
       params: { year, month },
     });
 
-    // Map holidays with correct date format
     const holidays: Holiday[] = data.data.entries.map((entry) => ({
-      date: entry.date.split("T")[0], // Normalize to YYYY-MM-DD
+      date: entry.date.split("T")[0],
       description: entry.description,
       isHoliday: entry.isHoliday,
       isWeekend: entry.isWeekend,
@@ -79,8 +76,7 @@ export const getCachedHolidays = async (
     return [];
   }
 };
-// Attendance calendar
-// Update getAttendanceCalendar function:
+
 export const getAttendanceCalendar = async (
   employeeNumber: string,
   year?: number,
@@ -104,17 +100,16 @@ export const getAttendanceCalendar = async (
     );
 
     if (data.success && data.data) {
-      // Direct mapping - backend already returns the correct structure
       const mappedAttendances: AttendanceDate[] = data.data.attendances.map(
         (att: any) => ({
-          date: att.date.split("T")[0], // Normalize date to YYYY-MM-DD
-          present: 1, // If record exists, user was present
+          date: att.date.split("T")[0],
+          present: 1,
           absent: 0,
           attendance: {
             takenLocation: att.takenLocation,
             checkinTime: att.checkinTime,
             checkoutTime: att.checkoutTime,
-            sessionType: att.sessionType, // Keep as 'FN' or 'AF'
+            sessionType: att.sessionType,
             fullDay: att.attendanceType === "FULL_DAY",
             halfDay: att.attendanceType === "HALF_DAY",
             isCheckout: !!att.checkoutTime,
@@ -143,7 +138,6 @@ export const getAttendanceCalendar = async (
     };
   }
 };
-// Marked dates helper for calendar UI
 
 export const getMarkedDates = (
   attendanceDates: AttendanceDate[],
@@ -151,37 +145,31 @@ export const getMarkedDates = (
 ) => {
   const marked: { [key: string]: any } = {};
 
-  // Get current hour to check if it's after 11 PM
   const currentHour = new Date().getHours();
   const today = new Date().toISOString().split("T")[0];
 
-  // 1. Attendance entries - simplified color scheme
   attendanceDates.forEach((item) => {
     const dateStr = item.date.split("T")[0];
-    let dotColor = colors.error; // Gray for absent
+    let dotColor = colors.error;
     let backgroundColor = "#F87171";
     let textColor = "#1F2937";
 
     if (item.present === 1) {
       if (item.attendance) {
-        // Special handling for today's attendance after 11 PM
         if (
           dateStr === today &&
           currentHour >= 23 &&
           !item.attendance.isCheckout
         ) {
-          // After 11 PM, show as Present even if not checked out
-          dotColor = "#10B981"; // Success
+          dotColor = "#10B981";
           backgroundColor = "#D1FAE5";
           textColor = "#065F46";
         } else if (!item.attendance.isCheckout) {
-          // Before 11 PM or other days - show as In Progress
-          dotColor = "#F59E0B"; // Warning
+          dotColor = "#F59E0B";
           backgroundColor = "#FEF3C7";
           textColor = "#92400E";
         } else {
-          // Present (checked out - regardless of full/half day)
-          dotColor = "#10B981"; // Success
+          dotColor = "#10B981";
           backgroundColor = "#D1FAE5";
           textColor = "#065F46";
         }
@@ -206,7 +194,6 @@ export const getMarkedDates = (
     };
   });
 
-  // 2. Holidays & weekends
   holidays.forEach((h) => {
     const dateStr = h.date.split("T")[0] || h.date;
     if (!marked[dateStr]) {

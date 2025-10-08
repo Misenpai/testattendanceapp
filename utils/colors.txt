@@ -1,4 +1,0 @@
-b8f3d7 - light blue
-dcfd00 - light green
-ffe182 - light yellow
-fffff3 - skin

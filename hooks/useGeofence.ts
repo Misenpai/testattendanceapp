@@ -1,4 +1,3 @@
-// hooks/useGeofence.ts
 import {
   getDepartmentLocation,
   IIT_GUWAHATI_LOCATION
@@ -12,7 +11,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 import { MapShapeType } from "react-native-leaflet-view";
 
-// Add this interface for the attendance service
 interface AttendanceCoordinates {
   latitude: number;
   longitude: number;
@@ -20,10 +18,8 @@ interface AttendanceCoordinates {
   timestamp: Date;
 }
 
-// Add this type for the callback
 type AttendanceUpdateCallback = (coordinates: AttendanceCoordinates) => void;
 
-// Update the useGeofence hook to handle field trips properly
 export function useGeofence(
   userLocationType?: "CAMPUS" | "FIELDTRIP" | null,
   isFieldTrip?: boolean,
@@ -37,14 +33,11 @@ export function useGeofence(
 
   const department = useAttendanceStore((state) => state.department);
 
-  // Update active geofence locations logic for departments
   const activeGeofenceLocations = useMemo(() => {
     if (userLocationType === "FIELDTRIP") {
-      // For field trips, return empty array but still track location
       return [];
     }
 
-    // CAMPUS type - IIT + user's department
     if (!department) {
       return [IIT_GUWAHATI_LOCATION];
     }
@@ -103,7 +96,6 @@ export function useGeofence(
         departmentLocation.center.lng
       );
 
-      // Check both IIT campus and department radius
       if (distToIIT <= iit.radius) {
         if (distToDepartment <= departmentLocation.radius) {
           return departmentLocation.label;
@@ -116,7 +108,6 @@ export function useGeofence(
     [haversine, activeGeofenceLocations, userLocationType]
   );
 
-  // Add function to send coordinates to attendance service
   const updateAttendanceLocation = useCallback(
     (position: LatLng, detectedLocation: string | null) => {
       if (onLocationUpdate) {
@@ -132,12 +123,11 @@ export function useGeofence(
     [onLocationUpdate]
   );
 
-  // Add method to manually capture current position for attendance
   const captureLocationForAttendance = useCallback(
     async (): Promise<AttendanceCoordinates | null> => {
       try {
         const { coords } = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High, // Use high accuracy for attendance
+          accuracy: Location.Accuracy.High,
         });
 
         const position: LatLng = {
@@ -154,7 +144,6 @@ export function useGeofence(
           timestamp: new Date(),
         };
 
-        // Also call the callback if provided
         if (onLocationUpdate) {
           onLocationUpdate(coordinates);
         }
@@ -175,7 +164,7 @@ export function useGeofence(
     (): MapShape[] =>
       activeGeofenceLocations.map((geofence, index) => ({
         shapeType: MapShapeType.CIRCLE,
-        color: index === 0 ? "#00a8ff" : "#ff6b6b", // IIT blue, department red
+        color: index === 0 ? "#00a8ff" : "#ff6b6b",
         id: geofence.id,
         center: geofence.center,
         radius: geofence.radius,
@@ -189,9 +178,8 @@ export function useGeofence(
         baseLayerName: "OpenStreetMap",
         baseLayerIsChecked: true,
         baseLayer: true,
-        url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright ">OSM</a>',
+        url: process.env.EXPO_PUBLIC_OPENSTREETMAP_URL!,
+        attribution: process.env.EXPO_PUBLIC_OPENSTREETMAP_ATTRIBUTION!,
       },
     ],
     []
@@ -336,7 +324,6 @@ export function useGeofence(
           setCurrentLocation(detectedLocation);
           setIsInitialized(true);
 
-          // Send initial position to attendance service
           updateAttendanceLocation(initialPosition, detectedLocation);
         }
 
@@ -358,7 +345,6 @@ export function useGeofence(
             setUserPos(newPos);
             setCurrentLocation(detectedLocation);
 
-            // Send updated position to attendance service
             updateAttendanceLocation(newPos, detectedLocation);
           }
         );
@@ -394,7 +380,6 @@ export function useGeofence(
     mapCenter: mapCenter || initialPos,
     activeGeofenceLocations,
     requestPermission,
-    // New exports for attendance functionality
     captureLocationForAttendance,
     updateAttendanceLocation,
   };

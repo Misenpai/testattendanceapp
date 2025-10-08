@@ -1,4 +1,3 @@
-// services/attendanceValidationService.ts
 import {
   IIT_GUWAHATI_LOCATION,
   getDepartmentLocation
@@ -18,23 +17,19 @@ export interface ValidationResult {
 }
 
 export class AttendanceValidationService {
-  // Working hours configuration
   private readonly WORKING_HOURS = {
     FORENOON: {
-      start: { hour: 9, minute: 0 },  // 9:00 AM
-      end: { hour: 13, minute: 0 }      // 1:00 PM
+      start: { hour: 9, minute: 0 },
+      end: { hour: 13, minute: 0 }
     },
     AFTERNOON: {
-      start: { hour: 13, minute: 0 },   // 1:00 PM  
-      end: { hour: 17, minute: 30 }      // 5:30 PM
+      start: { hour: 13, minute: 0 },
+      end: { hour: 17, minute: 30 }
     }
   };
 
-  /**
-   * Calculate distance between two coordinates using Haversine formula
-   */
   private calculateDistance(point1: LatLng, point2: LatLng): number {
-    const R = 6371000; // Earth's radius in meters
+    const R = 6371000;
     const toRad = (deg: number) => (deg * Math.PI) / 180;
     
     const dLat = toRad(point2.lat - point1.lat);
@@ -50,9 +45,6 @@ export class AttendanceValidationService {
     return R * c;
   }
 
-  /**
-   * Check if current time is within working hours
-   */
   public isWithinWorkingHours(): { 
     isValid: boolean; 
     session: "FORENOON" | "AFTERNOON" | "OUTSIDE";
@@ -104,9 +96,6 @@ export class AttendanceValidationService {
     }
   }
 
-  /**
-   * Check if user is inside IIT Guwahati campus
-   */
   public isInsideIIT(userPosition: LatLng): boolean {
     const distance = this.calculateDistance(
       userPosition, 
@@ -115,9 +104,6 @@ export class AttendanceValidationService {
     return distance <= IIT_GUWAHATI_LOCATION.radius;
   }
 
-  /**
-   * Check if user is inside their department radius
-   */
   public isInsideDepartment(
     userPosition: LatLng, 
     departmentId: string
@@ -136,15 +122,11 @@ export class AttendanceValidationService {
     };
   }
 
-  /**
-   * Validate if user can mark attendance
-   */
   public validateAttendance(
     userPosition: LatLng,
     departmentId: string,
     userLocationType: "CAMPUS" | "FIELDTRIP" | null
   ): ValidationResult {
-    // For field trips, only check working hours
     if (userLocationType === "FIELDTRIP") {
       const timeCheck = this.isWithinWorkingHours();
       
@@ -174,12 +156,10 @@ export class AttendanceValidationService {
       };
     }
 
-    // For CAMPUS mode, check everything
     const timeCheck = this.isWithinWorkingHours();
     const isInsideIIT = this.isInsideIIT(userPosition);
     const departmentCheck = this.isInsideDepartment(userPosition, departmentId);
 
-    // First check: Working hours
     if (!timeCheck.isValid) {
       return {
         isValid: false,
@@ -193,7 +173,6 @@ export class AttendanceValidationService {
       };
     }
 
-    // Second check: Inside IIT campus
     if (!isInsideIIT) {
       return {
         isValid: false,
@@ -208,7 +187,6 @@ export class AttendanceValidationService {
       };
     }
 
-    // Third check: Inside department radius
     if (!departmentCheck.isInside) {
       const department = getDepartmentLocation(departmentId);
       const distanceInfo = departmentCheck.distance 
@@ -228,7 +206,6 @@ export class AttendanceValidationService {
       };
     }
 
-    // All checks passed
     const department = getDepartmentLocation(departmentId);
     return {
       isValid: true,
@@ -242,9 +219,6 @@ export class AttendanceValidationService {
     };
   }
 
-  /**
-   * Get user's current location status
-   */
   public getLocationStatus(
     userPosition: LatLng,
     departmentId: string,
@@ -269,5 +243,4 @@ export class AttendanceValidationService {
   }
 }
 
-// Export singleton instance
 export const attendanceValidation = new AttendanceValidationService();

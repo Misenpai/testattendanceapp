@@ -29,7 +29,7 @@ export const getUserAvatar = async (
     return avatarData ? JSON.parse(avatarData) : undefined; // Return undefined instead of null
   } catch (error) {
     console.error("Error getting avatar:", error);
-    return undefined; // Return undefined instead of null
+    return undefined;
   }
 };
 

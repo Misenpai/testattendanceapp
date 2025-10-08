@@ -1,4 +1,3 @@
-// store/attendanceStore.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CameraCapturedPicture } from "expo-camera";
 import { create } from "zustand";
@@ -6,6 +5,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { getUserData } from "../services/UserId";
 import { AudioRecording, ViewMode } from "../types/attendance";
 import { useAuthStore } from "./authStore";
+
 interface AttendanceRecord {
   date: string;
   timestamp: number;
@@ -21,7 +21,7 @@ interface AttendanceRecord {
   attendanceKey?: string;
 }
 
-export type PhotoPosition = "front" | "left" | "right";
+export type PhotoPosition = "front";
 
 interface AttendanceState {
   userId: string | null;
@@ -39,20 +39,12 @@ interface AttendanceState {
   todayAttendanceMarked: boolean;
   currentSessionPhotoPosition: PhotoPosition | null;
   lastAttendanceUpdate: number;
-
-  // Field trip related state
   userLocationType: "CAMPUS" | "FIELDTRIP" | null;
   isFieldTrip: boolean;
   fieldTripDates: { startDate: string; endDate: string }[];
-
-  // Session & checkout
   currentSessionType: "FORENOON" | "AFTERNOON" | null;
   canCheckout: boolean;
-
-  // Department
   department: string | null;
-
-  // Actions
   initializeUserId: () => Promise<void>;
   setUserId: (userId: string | null) => void;
   clearUserId: () => void;
@@ -74,16 +66,10 @@ interface AttendanceState {
   setUserLocationType: (type: "CAMPUS" | "FIELDTRIP" | null) => void;
   checkFieldTripStatus: () => Promise<void>;
   fetchUserLocationSettings: () => Promise<void>;
-
-  // Checkout & session helpers
   checkoutAttendance: () => Promise<boolean>;
   getCurrentSessionType: () => "FORENOON" | "AFTERNOON" | "OUTSIDE";
-
-  // Department setter
   setDepartment: (department: string) => void;
   fetchUserDepartment: () => Promise<void>;
-
-  // Add this new action
   updateInProgressToPresent: () => Promise<void>;
   startAutoUpdateTimer: () => void;
   stopAutoUpdateTimer: () => void;
@@ -92,15 +78,13 @@ interface AttendanceState {
 
 const getTodayDateString = () => new Date().toISOString().split("T")[0];
 
-const generateRandomPhotoPosition = (): PhotoPosition => {
-  const positions: PhotoPosition[] = ["front", "left", "right"];
-  return positions[Math.floor(Math.random() * positions.length)];
+const generateFrontPhotoPosition = (): PhotoPosition => {
+  return "front";
 };
 
 export const useAttendanceStore = create<AttendanceState>()(
   persist(
     (set, get) => ({
-      // Initial state
       userId: null,
       isLoadingUserId: false,
       isInitialized: false,
@@ -116,21 +100,14 @@ export const useAttendanceStore = create<AttendanceState>()(
       todayAttendanceMarked: false,
       currentSessionPhotoPosition: null,
       lastAttendanceUpdate: 0,
-
-      // Field trip state
       userLocationType: null,
       isFieldTrip: false,
       fieldTripDates: [],
-
-      // Session & checkout
       currentSessionType: null,
       canCheckout: false,
-
-      // NEW
       department: null,
       autoUpdateTimerId: null,
 
-      // Actions
       initializeUserId: async () => {
         try {
           set({ isLoadingUserId: true });
@@ -143,12 +120,10 @@ export const useAttendanceStore = create<AttendanceState>()(
               isInitialized: true,
             });
 
-            // Check field trip status once on init
             await get().fetchUserLocationSettings();
             await get().fetchUserDepartment();
             await get().fetchTodayAttendanceFromServer();
 
-            // Start auto-update timer for 11PM rule
             get().startAutoUpdateTimer();
           } else {
             set({
@@ -226,7 +201,7 @@ export const useAttendanceStore = create<AttendanceState>()(
         ) {
           set({
             currentView: view,
-            currentSessionPhotoPosition: generateRandomPhotoPosition(),
+            currentSessionPhotoPosition: generateFrontPhotoPosition(),
           });
         } else {
           set({ currentView: view });
@@ -266,14 +241,14 @@ export const useAttendanceStore = create<AttendanceState>()(
 
       fetchTodayAttendanceFromServer: async () => {
         const state = get();
-        const { employeeNumber } = useAuthStore.getState(); // Get employeeNumber
+        const { employeeNumber } = useAuthStore.getState();
         if (!employeeNumber) return false;
 
         try {
           const authHeaders = useAuthStore.getState().getAuthHeaders();
 
           const res = await fetch(
-            `${process.env.EXPO_PUBLIC_API_BASE}/attendance/today/${employeeNumber}`, // Use employeeNumber
+            `${process.env.EXPO_PUBLIC_API_BASE}/attendance/today/${employeeNumber}`,
             {
               cache: "no-cache",
               headers: {
@@ -287,7 +262,6 @@ export const useAttendanceStore = create<AttendanceState>()(
           const today = getTodayDateString();
 
           if (data.success && data.data) {
-            // Direct mapping from the new backend structure
             const attendance = data.data;
 
             const serverRecord: AttendanceRecord = {
@@ -323,7 +297,6 @@ export const useAttendanceStore = create<AttendanceState>()(
             });
             return true;
           } else {
-            // No attendance for today
             set({
               attendanceRecords: state.attendanceRecords.filter(
                 (r) => r.date !== today
@@ -356,7 +329,7 @@ export const useAttendanceStore = create<AttendanceState>()(
       getTodayPhotoPosition: () => get().currentSessionPhotoPosition || "front",
 
       generateNewPhotoPosition: () => {
-        const pos = generateRandomPhotoPosition();
+        const pos = generateFrontPhotoPosition();
         set({ currentSessionPhotoPosition: pos });
         return pos;
       },
@@ -384,10 +357,9 @@ export const useAttendanceStore = create<AttendanceState>()(
 
       setUserLocationType: (type) => set({ userLocationType: type }),
 
-      // Fetch user location settings and preserve field trip dates
       fetchUserLocationSettings: async () => {
         const state = get();
-        const { employeeNumber } = useAuthStore.getState(); // Get employeeNumber
+        const { employeeNumber } = useAuthStore.getState();
         if (!employeeNumber) return;
 
         try {
@@ -398,9 +370,8 @@ export const useAttendanceStore = create<AttendanceState>()(
 
           const authHeaders = useAuthStore.getState().getAuthHeaders();
 
-          // Use username endpoint instead of employeeCode
           const res = await fetch(
-            `${process.env.EXPO_PUBLIC_API_BASE}/user-field-trips/employee/${employeeNumber}`, // Changed endpoint
+            `${process.env.EXPO_PUBLIC_API_BASE}/user-field-trips/employee/${employeeNumber}`,
             {
               method: "GET",
               headers: {
@@ -417,9 +388,8 @@ export const useAttendanceStore = create<AttendanceState>()(
           if (data.success && data.data) {
             const locationData = data.data;
 
-            // Check if user is currently on a field trip
             const today = new Date();
-            today.setHours(0, 0, 0, 0); // Reset time for date comparison
+            today.setHours(0, 0, 0, 0);
 
             const isOnTrip =
               locationData.fieldTrips?.some((trip: any) => {
@@ -432,9 +402,7 @@ export const useAttendanceStore = create<AttendanceState>()(
 
             set({
               userLocationType: isOnTrip ? "FIELDTRIP" : "CAMPUS",
-              // Always preserve field trip dates from server
               fieldTripDates: locationData.fieldTrips || [],
-              // Set isFieldTrip true if on an active trip
               isFieldTrip: isOnTrip,
             });
             console.log("Updated location state:", {
@@ -444,41 +412,34 @@ export const useAttendanceStore = create<AttendanceState>()(
             });
           } else {
             console.warn("Failed to fetch location settings:", data);
-            // Don't clear existing field trip dates if API call fails
             const currentState = get();
             set({
               userLocationType: "CAMPUS",
               isFieldTrip: false,
-              // Keep existing fieldTripDates if they exist
               fieldTripDates: currentState.fieldTripDates || [],
             });
           }
         } catch (err) {
           console.error("Error fetching user location settings:", err);
-          // Don't clear existing field trip dates on error
           const currentState = get();
           set({
             userLocationType: "CAMPUS",
             isFieldTrip: false,
-            // Keep existing fieldTripDates if they exist
             fieldTripDates: currentState.fieldTripDates || [],
           });
         }
       },
 
-      // Simplified checkFieldTripStatus that uses fetchUserLocationSettings
       checkFieldTripStatus: async () => {
         await get().fetchUserLocationSettings();
       },
 
       fetchUserDepartment: async () => {
         try {
-          // Access auth store
           const { useAuthStore } = await import("./authStore");
           const projects = useAuthStore.getState().projects;
 
           if (projects && projects.length > 0) {
-            // Take department from the first project (same logic as ProfileContainer)
             set({ department: projects[0].department });
           } else {
             set({ department: null });
@@ -489,19 +450,15 @@ export const useAttendanceStore = create<AttendanceState>()(
         }
       },
 
-      // Checkout & session helpers
       getCurrentSessionType: () => {
         const now = new Date();
         const hours = now.getHours();
         const minutes = now.getMinutes();
         const timeInMinutes = hours * 60 + minutes;
 
-        // Forenoon: 9:00 AM to 1:00 PM
         if (timeInMinutes >= 570 && timeInMinutes < 780) {
           return "FORENOON";
-        }
-        // Afternoon: 1:00 PM to 5:30 PM
-        else if (timeInMinutes >= 780 && timeInMinutes <= 1050) {
+        } else if (timeInMinutes >= 780 && timeInMinutes <= 1050) {
           return "AFTERNOON";
         }
         return "OUTSIDE";
@@ -509,17 +466,16 @@ export const useAttendanceStore = create<AttendanceState>()(
 
       checkoutAttendance: async () => {
         const state = get();
-        const { employeeNumber } = useAuthStore.getState(); // Get employeeNumber
+        const { employeeNumber } = useAuthStore.getState();
         if (!employeeNumber) return false;
 
         try {
           const { checkoutAttendance } = await import(
             "../services/attendanceService"
           );
-          const result = await checkoutAttendance(employeeNumber); // Pass employeeNumber
+          const result = await checkoutAttendance(employeeNumber);
 
           if (result.success) {
-            // Update local state
             await state.fetchTodayAttendanceFromServer();
             return true;
           }
@@ -530,33 +486,26 @@ export const useAttendanceStore = create<AttendanceState>()(
         }
       },
 
-      // NEW
       setDepartment: (department) => set({ department }),
 
-      // New method to update in-progress attendance to present after 11 PM
       updateInProgressToPresent: async () => {
         const state = get();
         const now = new Date();
         const currentHour = now.getHours();
 
-        // Only run after 11 PM (23:00)
         if (currentHour >= 23) {
           const today = getTodayDateString();
           const todayRecord = state.attendanceRecords.find(
             (r) => r.date === today
           );
 
-          // Check if attendance is marked but not checked out
           if (
             todayRecord &&
             !todayRecord.isCheckedOut &&
             state.todayAttendanceMarked
           ) {
-            // Update local state to show as present instead of in-progress
             const updatedRecord = {
               ...todayRecord,
-              // Keep isCheckedOut as false and checkOutTime as null/undefined
-              // This will make it appear as "Present" in the UI logic
             };
 
             set({
@@ -574,27 +523,22 @@ export const useAttendanceStore = create<AttendanceState>()(
         }
       },
 
-      // Start the auto-update timer
       startAutoUpdateTimer: () => {
         const state = get();
 
-        // Clear any existing timer
         if (state.autoUpdateTimerId) {
           clearInterval(state.autoUpdateTimerId);
         }
 
-        // Check immediately
         state.updateInProgressToPresent();
 
-        // Set up interval to check every minute
         const timerId = setInterval(() => {
           state.updateInProgressToPresent();
-        }, 60000); // Check every minute
+        }, 60000);
 
         set({ autoUpdateTimerId: timerId });
       },
 
-      // Stop the auto-update timer
       stopAutoUpdateTimer: () => {
         const state = get();
         if (state.autoUpdateTimerId) {

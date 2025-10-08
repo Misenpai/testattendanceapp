@@ -1,8 +1,8 @@
-import { audioRecorderStyles } from "@/constants/style";
+import { attendanceAudioRecorderStyles } from "@/constants/style";
 import { useAudio } from "@/hooks/useAudio";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, Text, View, Dimensions, StyleSheet } from "react-native";
+import { Dimensions, Pressable, Text, View } from "react-native";
 import Animated, {
   ReduceMotion,
   SlideInRight,
@@ -307,26 +307,26 @@ export function AudioRecorder({
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={onBack} style={styles.backButton}>
+    <View style={attendanceAudioRecorderStyles.container}>
+      <View style={attendanceAudioRecorderStyles.header}>
+        <Pressable onPress={onBack} style={attendanceAudioRecorderStyles.backButton}>
           <FontAwesome6 name="arrow-left" size={24} color="black" />
         </Pressable>
-        <Text style={styles.title}>Record Audio</Text>
+        <Text style={attendanceAudioRecorderStyles.title}>Record Audio</Text>
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.datePrompt}>
-          <Text style={styles.dateText}>
+      <View style={attendanceAudioRecorderStyles.content}>
+        <View style={attendanceAudioRecorderStyles.datePrompt}>
+          <Text style={attendanceAudioRecorderStyles.dateText}>
             Read the Text: &quot;Today is {getFormattedDate()}&quot;
           </Text>
         </View>
 
-        <View style={styles.waveformContainer}>
-          <View style={styles.waveformScrollContainer}>
+        <View style={attendanceAudioRecorderStyles.waveformContainer}>
+          <View style={attendanceAudioRecorderStyles.waveformScrollContainer}>
             <Animated.View
               entering={SlideInRight}
-              style={[styles.waveform, waveformStyle]}
+              style={[attendanceAudioRecorderStyles.waveform, waveformStyle]}
             >
               {waveformData.map((amplitude, index) => (
                 <Animated.View
@@ -355,22 +355,22 @@ export function AudioRecorder({
           </View>
         </View>
 
-        <View style={styles.durationContainer}>
-          <Text style={styles.durationText}>
+        <View style={attendanceAudioRecorderStyles.durationContainer}>
+          <Text style={attendanceAudioRecorderStyles.durationText}>
             {audio.isPlaying
               ? formatTime(playbackProgress * playbackDuration)
               : "0:00"}
           </Text>
-          <Text style={styles.durationText}>
+          <Text style={attendanceAudioRecorderStyles.durationText}>
             {formatTime(recordingDuration)}
           </Text>
         </View>
 
-        <View style={styles.statusIndicator}>
+        <View style={attendanceAudioRecorderStyles.statusIndicator}>
           {audio.recorderState.isRecording && (
-            <Animated.View style={styles.recordingDot} />
+            <Animated.View style={attendanceAudioRecorderStyles.recordingDot} />
           )}
-          <Text style={styles.statusText}>
+          <Text style={attendanceAudioRecorderStyles.statusText}>
             {audio.recorderState.isRecording
               ? `Recording...`
               : hasRecording
@@ -380,7 +380,7 @@ export function AudioRecorder({
         </View>
       </View>
 
-      <View style={styles.controlsContainer}>
+      <View style={attendanceAudioRecorderStyles.controlsContainer}>
         {!hasRecording ? (
           <Pressable
             onPress={
@@ -389,10 +389,10 @@ export function AudioRecorder({
                 : handleStartRecording
             }
             style={[
-              styles.controlButtonBase,
+              attendanceAudioRecorderStyles.controlButtonBase,
               audio.recorderState.isRecording
-                ? styles.stopButton
-                : styles.recordButton,
+                ? attendanceAudioRecorderStyles.stopButton
+                : attendanceAudioRecorderStyles.recordButton,
             ]}
           >
             <FontAwesome6
@@ -402,12 +402,12 @@ export function AudioRecorder({
             />
           </Pressable>
         ) : (
-          <View style={styles.playbackControls}>
+          <View style={attendanceAudioRecorderStyles.playbackControls}>
             <Pressable
               onPress={handleRetake}
               style={[
-                styles.controlButtonBase,
-                styles.retakeButton,
+                attendanceAudioRecorderStyles.controlButtonBase,
+                attendanceAudioRecorderStyles.retakeButton,
               ]}
             >
               <FontAwesome6 name="arrow-rotate-left" size={24} color="black" />
@@ -415,8 +415,8 @@ export function AudioRecorder({
             <Pressable
               onPress={handlePlayRecording}
               style={[
-                styles.controlButtonBase,
-                styles.playPauseButton,
+                attendanceAudioRecorderStyles.controlButtonBase,
+                attendanceAudioRecorderStyles.playPauseButton,
               ]}
             >
               <FontAwesome6
@@ -428,8 +428,8 @@ export function AudioRecorder({
             <Pressable
               onPress={handleComplete}
               style={[
-                styles.controlButtonBase,
-                styles.completeButton,
+                attendanceAudioRecorderStyles.controlButtonBase,
+                attendanceAudioRecorderStyles.completeButton,
               ]}
             >
               <FontAwesome6 name="check" size={24} color="white" />
@@ -440,27 +440,3 @@ export function AudioRecorder({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  ...audioRecorderStyles,
-  waveformContainer: {
-    height: 120,
-    borderWidth: 4,
-    borderColor: "#000",
-    backgroundColor: "#fff",
-    marginVertical: 20,
-    overflow: 'hidden',
-  },
-  waveformScrollContainer: {
-    flex: 1,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  waveform: {
-    flexDirection: 'row',
-    gap: 3,
-    alignItems: 'center',
-    maxWidth: MAX_WAVEFORM_WIDTH,
-  },
-});

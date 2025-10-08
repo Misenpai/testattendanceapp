@@ -1,4 +1,3 @@
-// services/permissionsService.ts
 import { AudioModule } from "expo-audio";
 import * as Location from "expo-location";
 import { Alert } from "react-native";
@@ -19,20 +18,17 @@ export interface PermissionResult {
 class PermissionsService {
   async checkAllPermissions(): Promise<PermissionStatus> {
     try {
-      // Check audio permission
       const audioStatus = await this.checkAudioPermission();
       
-      // Check location permission
       const locationStatus = await this.checkLocationPermission();
 
       const permissions: PermissionStatus = {
-        camera: false, // Camera will be checked by the hook
+        camera: false,
         audio: audioStatus,
         location: locationStatus,
         allGranted: false,
       };
 
-      // Note: Camera permission status will be set by the hook
       permissions.allGranted = permissions.audio && permissions.location;
 
       return permissions;
@@ -51,7 +47,6 @@ class PermissionsService {
     try {
       console.log("PermissionsService: Starting permission requests...");
 
-      // Request audio permission
       const audioResult = await this.requestAudioPermission();
       console.log("PermissionsService: Audio permission result:", audioResult);
       
@@ -63,7 +58,6 @@ class PermissionsService {
         };
       }
 
-      // Request location permission
       const locationResult = await this.requestLocationPermission();
       console.log("PermissionsService: Location permission result:", locationResult);
       
@@ -77,8 +71,6 @@ class PermissionsService {
 
       const finalPermissions = await this.checkAllPermissions();
       
-      // Note: Camera permission is handled separately by the hook
-      // We only check audio and location here
       const success = finalPermissions.audio && finalPermissions.location;
       
       return {
@@ -174,7 +166,6 @@ class PermissionsService {
         {
           text: "Open Settings",
           onPress: () => {
-            // Note: Opening settings is platform-specific and may require additional setup
             Alert.alert(
               "Settings",
               "Please go to your device settings and enable the required permissions for this app."

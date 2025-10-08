@@ -1,6 +1,7 @@
+import { profileFieldProfileStyles } from "@/constants/style";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 interface ProfileFieldProps {
   label: string;
@@ -16,55 +17,22 @@ export const ProfileField: React.FC<ProfileFieldProps> = ({
   icon,
 }) => {
   return (
-    <View style={styles.fieldContainer}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.input}>
-        <View style={styles.inputContent}>
+    <View style={profileFieldProfileStyles.fieldContainer}>
+      <Text style={profileFieldProfileStyles.label}>{label}</Text>
+      <View style={profileFieldProfileStyles.input}>
+        <View style={profileFieldProfileStyles.inputContent}>
           {icon && (
             <FontAwesome6
               name={icon}
               size={18}
               color="black"
-              style={styles.icon}
+              style={profileFieldProfileStyles.icon}
             />
           )}
-          <Text style={styles.text}>{value}</Text>
+          <Text style={profileFieldProfileStyles.text}>{value}</Text>
         </View>
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  fieldContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "black",
-    marginBottom: 8,
-    textTransform: "uppercase",
-  },
-  input: {
-    backgroundColor: "white",
-    borderWidth: 2,
-    borderColor: "black",
-    padding: 16,
-    overflow: 'hidden',
-  },
-  inputContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  icon: {
-    marginRight: 12,
-  },
-  text: {
-    fontSize: 16,
-    color: "black",
-    fontWeight: "600",
-    flex: 1,
-    flexWrap: 'wrap',
-  },
-});

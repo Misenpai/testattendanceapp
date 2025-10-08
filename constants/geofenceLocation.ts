@@ -1,14 +1,15 @@
-// constants/geofenceLocation.ts
 import { GeofenceLocation } from "@/types/geofence";
+
 export const IIT_GUWAHATI_LOCATION: GeofenceLocation = {
   id: "iit-guwahati",
   label: "IIT Guwahati",
   center: {
-    lat: 26.1923, // 26°11'10.8"N
-    lng: 91.6951, // 91°44'43.2"E
+    lat: 26.1923,
+    lng: 91.6951,
   },
-  radius: 1200, // meters for campus
+  radius: 1200,
 };
+
 export const DEPARTMENTS: GeofenceLocation[] = [
   {
     id: "Dept1",
@@ -17,7 +18,7 @@ export const DEPARTMENTS: GeofenceLocation[] = [
       lat: 26.18535,
       lng: 91.69221,
     },
-    radius: 200, // 200 meter radius from department
+    radius: 200,
   },
   {
     id: "Dep2",
@@ -181,7 +182,6 @@ export const DEPARTMENTS: GeofenceLocation[] = [
     },
     radius: 200,
   },
-  // New departments added to match employee data
   {
     id: "Dept20",
     label: "Industrial Interactions and Special Initiatives",
@@ -210,7 +210,7 @@ export const DEPARTMENTS: GeofenceLocation[] = [
     radius: 200,
   },
 ];
-// Updated mapping function to handle department name variations
+
 export const getDepartmentLocation = (
   departmentName: string
 ): GeofenceLocation | undefined => {

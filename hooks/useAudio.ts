@@ -15,12 +15,11 @@ export function useAudio() {
   const [audioPermission, setAudioPermission] = useState<boolean>(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentRecording, setCurrentRecording] = useState<AudioRecording | null>(null);
-  const [shouldPlay, setShouldPlay] = useState(false); // New: Flag for deferred play
+  const [shouldPlay, setShouldPlay] = useState(false);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder);
 
-  // Player: Use undefined if no URI to avoid invalid empty string
   const audioPlayer = useAudioPlayer(currentRecording?.uri ?? undefined);
   const playerStatus = useAudioPlayerStatus(audioPlayer);
 
@@ -39,11 +38,9 @@ export function useAudio() {
     })();
   }, []);
 
-  // Update isPlaying from status
   useEffect(() => {
     if (playerStatus?.isLoaded) {
       setIsPlaying(playerStatus.playing || false);
-      // Handle completion
       if (playerStatus.didJustFinish) {
         setIsPlaying(false);
         audioPlayer.seekTo(0);
@@ -51,17 +48,15 @@ export function useAudio() {
     }
   }, [playerStatus, audioPlayer]);
 
-  // New: Effect to handle deferred playback when loaded
   useEffect(() => {
     if (shouldPlay && playerStatus?.isLoaded && !isPlaying) {
       (async () => {
         try {
-          // Reset if at end
           if (playerStatus.currentTime >= (playerStatus.duration || 0)) {
             await audioPlayer.seekTo(0);
           }
           await audioPlayer.play();
-          setShouldPlay(false); // Clear flag
+          setShouldPlay(false);
         } catch (error) {
           console.error("Deferred playback error:", error);
           setShouldPlay(false);
@@ -76,7 +71,6 @@ export function useAudio() {
       return;
     }
     try {
-      // Stop any playing audio
       if (isPlaying) {
         await stopAudio();
       }
@@ -113,21 +107,17 @@ export function useAudio() {
       const isSameRecording = currentRecording?.uri === recording.uri;
 
       if (isPlaying) {
-        // Toggle: Pause if playing
         await stopAudio();
       } else {
         if (!isSameRecording) {
-          // Change source: Set recording and request play (deferred)
           setCurrentRecording(recording);
           setShouldPlay(true);
         } else if (playerStatus?.isLoaded) {
-          // Same source and loaded: Play immediately
           if (playerStatus.currentTime >= (playerStatus.duration || 0)) {
             await audioPlayer.seekTo(0);
           }
           await audioPlayer.play();
         } else {
-          // Not loaded yet: Defer
           setShouldPlay(true);
         }
       }
@@ -167,7 +157,7 @@ export function useAudio() {
               }
               setCurrentRecording(null);
               setIsPlaying(false);
-              setShouldPlay(false); // Clear flag
+              setShouldPlay(false);
               resolve();
             },
           },

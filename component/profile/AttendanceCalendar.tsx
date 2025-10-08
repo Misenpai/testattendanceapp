@@ -1,11 +1,10 @@
-// component/profile/AttendanceCalendar.tsx
-import { colors } from "@/constants/colors";
+import { brutalistColors, colors } from "@/constants/colors";
+import { attendanceCalendarStyles } from "@/constants/style";
 import {
   AttendanceDate,
   AttendanceStatistics,
   getAttendanceCalendar,
   getCachedHolidays,
-  getMarkedDates,
   Holiday,
 } from "@/services/attendanceCalendarService";
 import { useAttendanceStore } from "@/store/attendanceStore";
@@ -17,41 +16,24 @@ import {
   Alert,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
-// Brutalist Color Palette
-const brutalistColors = {
-  background: "#FFFFFF",
-  text: "#000000",
-  border: "#000000",
-  primary: "#000000",
-  white: "#FFFFFF",
-  present: "#34D399", // A strong green
-  absent: "#F87171", // A strong red
-  inProgress: "#f1eabfff", // A strong yellow/amber
-  holiday: "#F59E0B", // A strong orange for holidays
-  weekend: "#818CF8", // A strong indigo/purple for weekends
-  fieldTrip: "#F59E0B",
-  disabled: "#D1D5DB",
-};
 
 interface AttendanceCalendarProps {
   employeeCode: string;
 }
 
-// A reusable wrapper for the brutalist card style
 const BrutalistCard: React.FC<{ children: React.ReactNode; style?: any }> = ({
   children,
   style,
 }) => (
-  <View style={styles.brutalistCardWrapper}>
-    <View style={[styles.brutalistCard, style]}>{children}</View>
+  <View style={attendanceCalendarStyles.brutalistCardWrapper}>
+    <View style={[attendanceCalendarStyles.brutalistCard, style]}>{children}</View>
   </View>
 );
 
@@ -61,7 +43,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   const [loading, setLoading] = useState(true);
   const [attendanceDates, setAttendanceDates] = useState<AttendanceDate[]>([]);
   const [statistics, setStatistics] = useState<AttendanceStatistics | null>(
-    null
+    null,
   );
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -70,20 +52,19 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [isChangingMonth, setIsChangingMonth] = useState(false);
   const attendanceRecords = useAttendanceStore(
-    (state) => state.attendanceRecords
+    (state) => state.attendanceRecords,
   );
   const todayAttendanceMarked = useAttendanceStore(
-    (state) => state.todayAttendanceMarked
+    (state) => state.todayAttendanceMarked,
   );
   const { fieldTripDates } = useAttendanceStore();
 
-  // Load holidays using the /api/calendar endpoint
   useEffect(() => {
     const loadHolidays = async () => {
       try {
         const cachedHolidays = await getCachedHolidays(
           selectedYear,
-          selectedMonth
+          selectedMonth,
         );
         setHolidays(cachedHolidays);
       } catch (error) {
@@ -102,82 +83,80 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     return !isWeekend && !isHoliday;
   };
 
-// In component/profile/AttendanceCalendar.tsx, update fetchAttendanceData:
+  const fetchAttendanceData = useCallback(
+    async (showLoading = true) => {
+      try {
+        if (showLoading && !isChangingMonth) setLoading(true);
 
-const fetchAttendanceData = useCallback(
-  async (showLoading = true) => {
-    try {
-      if (showLoading && !isChangingMonth) setLoading(true);
-      
-      const response = await getAttendanceCalendar(
-        employeeCode,
-        selectedYear,
-        selectedMonth
-      );
-      
-      if (response.success && response.data) {
-        const attendances = response.data.attendances;
-        
-        // Create a map for quick lookup
-        const attendanceMap = new Map(
-          attendances.map(a => [a.date, a])
+        const response = await getAttendanceCalendar(
+          employeeCode,
+          selectedYear,
+          selectedMonth,
         );
-        
-        // Generate all dates for the month
-        const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
-        const allDatesInMonth: AttendanceDate[] = [];
-        const today = new Date().toISOString().split('T')[0];
-        
-        for (let day = 1; day <= daysInMonth; day++) {
-          const dateStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          
-          // Skip future dates
-          if (dateStr > today) continue;
-          
-          const existingAttendance = attendanceMap.get(dateStr);
-          
-          if (existingAttendance) {
-            // User was present
-            allDatesInMonth.push(existingAttendance);
-          } else {
-            // Check if it's a working day
-            const dayOfWeek = new Date(dateStr).getDay();
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-            const isHoliday = holidays.some(h => h.date.split('T')[0] === dateStr);
-            
-            if (!isWeekend && !isHoliday) {
-              // It's a working day but no attendance = absent
-              allDatesInMonth.push({
-                date: dateStr,
-                present: 0,
-                absent: 1,
-                attendance: undefined
-              });
+
+        if (response.success && response.data) {
+          const attendances = response.data.attendances;
+
+          const attendanceMap = new Map(attendances.map((a) => [a.date, a]));
+
+          const daysInMonth = new Date(
+            selectedYear,
+            selectedMonth,
+            0,
+          ).getDate();
+          const allDatesInMonth: AttendanceDate[] = [];
+          const today = new Date().toISOString().split("T")[0];
+
+          for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+            if (dateStr > today) continue;
+
+            const existingAttendance = attendanceMap.get(dateStr);
+
+            if (existingAttendance) {
+              allDatesInMonth.push(existingAttendance);
+            } else {
+              const dayOfWeek = new Date(dateStr).getDay();
+              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+              const isHoliday = holidays.some(
+                (h) => h.date.split("T")[0] === dateStr,
+              );
+
+              if (!isWeekend && !isHoliday) {
+                allDatesInMonth.push({
+                  date: dateStr,
+                  present: 0,
+                  absent: 1,
+                  attendance: undefined,
+                });
+              }
             }
           }
+
+          setAttendanceDates(allDatesInMonth);
+          setStatistics(response.data.statistics);
+
+          const marked = getMarkedDates(allDatesInMonth, holidays);
+          setMarkedDates(marked);
+        } else if (!isChangingMonth) {
+          Alert.alert(
+            "Error",
+            response.error || "Failed to load attendance data",
+          );
         }
-        
-        setAttendanceDates(allDatesInMonth);
-        setStatistics(response.data.statistics);
-        
-        // Update marked dates
-        const marked = getMarkedDates(allDatesInMonth, holidays);
-        setMarkedDates(marked);
-      } else if (!isChangingMonth) {
-        Alert.alert("Error", response.error || "Failed to load attendance data");
+      } catch (error) {
+        console.error("Error fetching attendance:", error);
+        if (!isChangingMonth) {
+          Alert.alert("Error", "Failed to load attendance data");
+        }
+      } finally {
+        if (showLoading && !isChangingMonth) setLoading(false);
+        setIsChangingMonth(false);
       }
-    } catch (error) {
-      console.error("Error fetching attendance:", error);
-      if (!isChangingMonth) {
-        Alert.alert("Error", "Failed to load attendance data");
-      }
-    } finally {
-      if (showLoading && !isChangingMonth) setLoading(false);
-      setIsChangingMonth(false);
-    }
-  },
-  [employeeCode, selectedYear, selectedMonth, holidays, isChangingMonth]
-);
+    },
+    [employeeCode, selectedYear, selectedMonth, holidays, isChangingMonth],
+  );
 
   useEffect(() => {
     if (holidays.length > 0) {
@@ -191,7 +170,7 @@ const fetchAttendanceData = useCallback(
     const currentYear = new Date().getFullYear();
     if (selectedMonth === currentMonth && selectedYear === currentYear) {
       const todayRecord = attendanceRecords.find(
-        (record) => record.date === today
+        (record) => record.date === today,
       );
       if (todayRecord || todayAttendanceMarked) {
         const timeoutId = setTimeout(() => {
@@ -213,7 +192,7 @@ const fetchAttendanceData = useCallback(
       if (holidays.length > 0) {
         fetchAttendanceData(false);
       }
-    }, [fetchAttendanceData, holidays])
+    }, [fetchAttendanceData, holidays]),
   );
 
   const isFieldTrip = useMemo(() => {
@@ -250,7 +229,7 @@ const fetchAttendanceData = useCallback(
       return (
         <Animated.View entering={FadeInUp.duration(300)}>
           <BrutalistCard>
-            <Text style={styles.selectedDateTitle}>
+            <Text style={attendanceCalendarStyles.selectedDateTitle}>
               {new Date(selectedDate).toLocaleDateString("en-US", {
                 weekday: "long",
                 year: "numeric",
@@ -260,7 +239,7 @@ const fetchAttendanceData = useCallback(
             </Text>
 
             {holiday ? (
-              <View style={styles.noDataContainer}>
+              <View style={attendanceCalendarStyles.noDataContainer}>
                 <FontAwesome6
                   name={holiday.isWeekend ? "calendar-week" : "calendar-xmark"}
                   size={32}
@@ -270,33 +249,33 @@ const fetchAttendanceData = useCallback(
                       : brutalistColors.holiday
                   }
                 />
-                <Text style={styles.noDataText}>{holiday.description}</Text>
-                <Text style={styles.noDataSubText}>
+                <Text style={attendanceCalendarStyles.noDataText}>{holiday.description}</Text>
+                <Text style={attendanceCalendarStyles.noDataSubText}>
                   {holiday.isWeekend ? "Weekend" : "Holiday"}
                 </Text>
               </View>
             ) : isFieldTrip ? (
-              <View style={styles.noDataContainer}>
+              <View style={attendanceCalendarStyles.noDataContainer}>
                 <FontAwesome6
                   name="route"
                   size={32}
                   color={brutalistColors.fieldTrip}
                 />
-                <Text style={styles.noDataText}>
+                <Text style={attendanceCalendarStyles.noDataText}>
                   Field Trip - No attendance marked
                 </Text>
-                <Text style={styles.noDataSubText}>
+                <Text style={attendanceCalendarStyles.noDataSubText}>
                   Attendance can still be marked during field trips
                 </Text>
               </View>
             ) : (
-              <View style={styles.noDataContainer}>
+              <View style={attendanceCalendarStyles.noDataContainer}>
                 <FontAwesome6
                   name="calendar-xmark"
                   size={32}
                   color={brutalistColors.text}
                 />
-                <Text style={styles.noDataText}>No attendance marked</Text>
+                <Text style={attendanceCalendarStyles.noDataText}>No attendance marked</Text>
               </View>
             )}
           </BrutalistCard>
@@ -329,7 +308,6 @@ const fetchAttendanceData = useCallback(
         };
       }
 
-      // If checked out, just show as Present
       return {
         label: "Present",
         color: brutalistColors.present,
@@ -342,7 +320,7 @@ const fetchAttendanceData = useCallback(
     return (
       <Animated.View entering={FadeInUp.duration(300)}>
         <BrutalistCard>
-          <Text style={styles.selectedDateTitle}>
+          <Text style={attendanceCalendarStyles.selectedDateTitle}>
             {new Date(selectedDate).toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",
@@ -351,10 +329,10 @@ const fetchAttendanceData = useCallback(
             })}
           </Text>
 
-          <View style={styles.badgeContainer}>
+          <View style={attendanceCalendarStyles.badgeContainer}>
             <View
               style={[
-                styles.attendanceBadge,
+                attendanceCalendarStyles.attendanceBadge,
                 {
                   backgroundColor: status.color,
                 },
@@ -367,7 +345,7 @@ const fetchAttendanceData = useCallback(
               />
               <Text
                 style={[
-                  styles.attendanceBadgeText,
+                  attendanceCalendarStyles.attendanceBadgeText,
                   { color: brutalistColors.white },
                 ]}
               >
@@ -378,7 +356,7 @@ const fetchAttendanceData = useCallback(
             {isFieldTrip && (
               <View
                 style={[
-                  styles.attendanceBadge,
+                  attendanceCalendarStyles.attendanceBadge,
                   { backgroundColor: brutalistColors.fieldTrip },
                 ]}
               >
@@ -389,7 +367,7 @@ const fetchAttendanceData = useCallback(
                 />
                 <Text
                   style={[
-                    styles.attendanceBadgeText,
+                    attendanceCalendarStyles.attendanceBadgeText,
                     { color: brutalistColors.white },
                   ]}
                 >
@@ -401,7 +379,7 @@ const fetchAttendanceData = useCallback(
             {holiday && (
               <View
                 style={[
-                  styles.attendanceBadge,
+                  attendanceCalendarStyles.attendanceBadge,
                   {
                     backgroundColor: holiday.isWeekend
                       ? brutalistColors.weekend
@@ -416,7 +394,7 @@ const fetchAttendanceData = useCallback(
                 />
                 <Text
                   style={[
-                    styles.attendanceBadgeText,
+                    attendanceCalendarStyles.attendanceBadgeText,
                     { color: brutalistColors.white },
                   ]}
                 >
@@ -427,31 +405,30 @@ const fetchAttendanceData = useCallback(
           </View>
 
           {attendance.attendance && attendance.present === 1 && (
-            <View style={styles.attendanceDetailsContainer}>
-              {/* Show Full Day or Half Day status for present days */}
+            <View style={attendanceCalendarStyles.attendanceDetailsContainer}>
               {attendance.attendance.isCheckout && (
-                <View style={styles.attendanceDetailRow}>
+                <View style={attendanceCalendarStyles.attendanceDetailRow}>
                   <FontAwesome6
                     name="calendar-day"
                     size={16}
                     color={brutalistColors.text}
                   />
-                  <Text style={styles.attendanceDetailLabel}>Day Type:</Text>
-                  <Text style={styles.attendanceDetailValue}>
+                  <Text style={attendanceCalendarStyles.attendanceDetailLabel}>Day Type:</Text>
+                  <Text style={attendanceCalendarStyles.attendanceDetailValue}>
                     {attendance.attendance.fullDay ? "Full Day" : "Half Day"}
                   </Text>
                 </View>
               )}
 
               {attendance.attendance.sessionType && (
-                <View style={styles.attendanceDetailRow}>
+                <View style={attendanceCalendarStyles.attendanceDetailRow}>
                   <FontAwesome6
                     name="business-time"
                     size={16}
                     color={brutalistColors.text}
                   />
-                  <Text style={styles.attendanceDetailLabel}>Session:</Text>
-                  <Text style={styles.attendanceDetailValue}>
+                  <Text style={attendanceCalendarStyles.attendanceDetailLabel}>Session:</Text>
+                  <Text style={attendanceCalendarStyles.attendanceDetailValue}>
                     {attendance.attendance.sessionType === "FN"
                       ? "Forenoon"
                       : "Afternoon"}
@@ -459,45 +436,45 @@ const fetchAttendanceData = useCallback(
                 </View>
               )}
 
-              <View style={styles.attendanceDetailRow}>
+              <View style={attendanceCalendarStyles.attendanceDetailRow}>
                 <FontAwesome6
                   name="location-dot"
                   size={16}
                   color={brutalistColors.text}
                 />
-                <Text style={styles.attendanceDetailLabel}>Location:</Text>
-                <Text style={styles.attendanceDetailValue}>
+                <Text style={attendanceCalendarStyles.attendanceDetailLabel}>Location:</Text>
+                <Text style={attendanceCalendarStyles.attendanceDetailValue}>
                   {attendance.attendance.takenLocation || "Not specified"}
                 </Text>
               </View>
 
               {attendance.attendance.checkinTime && (
-                <View style={styles.attendanceDetailRow}>
+                <View style={attendanceCalendarStyles.attendanceDetailRow}>
                   <FontAwesome6
                     name="right-to-bracket"
                     size={16}
                     color={brutalistColors.text}
                   />
-                  <Text style={styles.attendanceDetailLabel}>Check-in:</Text>
-                  <Text style={styles.attendanceDetailValue}>
+                  <Text style={attendanceCalendarStyles.attendanceDetailLabel}>Check-in:</Text>
+                  <Text style={attendanceCalendarStyles.attendanceDetailValue}>
                     {new Date(
-                      attendance.attendance.checkinTime
+                      attendance.attendance.checkinTime,
                     ).toLocaleTimeString()}
                   </Text>
                 </View>
               )}
 
               {attendance.attendance.checkoutTime && (
-                <View style={styles.attendanceDetailRow}>
+                <View style={attendanceCalendarStyles.attendanceDetailRow}>
                   <FontAwesome6
                     name="right-from-bracket"
                     size={16}
                     color={brutalistColors.text}
                   />
-                  <Text style={styles.attendanceDetailLabel}>Check-out:</Text>
-                  <Text style={styles.attendanceDetailValue}>
+                  <Text style={attendanceCalendarStyles.attendanceDetailLabel}>Check-out:</Text>
+                  <Text style={attendanceCalendarStyles.attendanceDetailValue}>
                     {new Date(
-                      attendance.attendance.checkoutTime
+                      attendance.attendance.checkoutTime,
                     ).toLocaleTimeString()}
                   </Text>
                 </View>
@@ -509,7 +486,6 @@ const fetchAttendanceData = useCallback(
     );
   };
 
-  // Calculate simplified statistics
   const getSimplifiedStatistics = () => {
     if (!attendanceDates || attendanceDates.length === 0) {
       return {
@@ -521,10 +497,10 @@ const fetchAttendanceData = useCallback(
     }
 
     const present = attendanceDates.filter(
-      (a) => a.present === 1 && a.attendance?.isCheckout
+      (a) => a.present === 1 && a.attendance?.isCheckout,
     ).length;
     const inProgress = attendanceDates.filter(
-      (a) => a.present === 1 && !a.attendance?.isCheckout
+      (a) => a.present === 1 && !a.attendance?.isCheckout,
     ).length;
     const absent = attendanceDates.filter((a) => a.present === 0).length;
 
@@ -541,7 +517,6 @@ const fetchAttendanceData = useCallback(
   const enhancedMarkedDates = useMemo(() => {
     const marked = { ...markedDates };
 
-    // Handle field trip dates
     if (
       fieldTripDates &&
       Array.isArray(fieldTripDates) &&
@@ -553,7 +528,6 @@ const fetchAttendanceData = useCallback(
         const start = new Date(trip.startDate);
         const end = new Date(trip.endDate);
 
-        // Validate dates
         if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -634,19 +608,18 @@ const fetchAttendanceData = useCallback(
         },
       },
     }),
-    []
+    [],
   );
 
-  // Simplified Statistics Card with brutalist styling
   const renderSimplifiedStatisticsCard = () => {
     return (
       <Animated.View entering={FadeInDown.delay(100).springify()}>
         <BrutalistCard>
-          <View style={styles.headerContainer}>
-            <Text style={styles.cardTitle}>MONTHLY SUMMARY</Text>
+          <View style={attendanceCalendarStyles.headerContainer}>
+            <Text style={attendanceCalendarStyles.cardTitle}>MONTHLY SUMMARY</Text>
             <TouchableOpacity
               onPress={handleRefresh}
-              style={styles.refreshButton}
+              style={attendanceCalendarStyles.refreshButton}
               activeOpacity={0.7}
             >
               <FontAwesome6
@@ -657,59 +630,59 @@ const fetchAttendanceData = useCallback(
             </TouchableOpacity>
           </View>
 
-          <View style={styles.simpleStatsGrid}>
-            <View style={styles.simpleStatItem}>
+          <View style={attendanceCalendarStyles.simpleStatsGrid}>
+            <View style={attendanceCalendarStyles.simpleStatItem}>
               <Text
                 style={[
-                  styles.simpleStatValue,
+                  attendanceCalendarStyles.simpleStatValue,
                   { color: brutalistColors.present },
                 ]}
               >
                 {simplifiedStats.present}
               </Text>
-              <Text style={styles.simpleStatLabel}>Present</Text>
+              <Text style={attendanceCalendarStyles.simpleStatLabel}>Present</Text>
             </View>
 
-            <View style={styles.simpleStatDivider} />
+            <View style={attendanceCalendarStyles.simpleStatDivider} />
 
-            <View style={styles.simpleStatItem}>
+            <View style={attendanceCalendarStyles.simpleStatItem}>
               <Text
                 style={[
-                  styles.simpleStatValue,
+                  attendanceCalendarStyles.simpleStatValue,
                   { color: brutalistColors.absent },
                 ]}
               >
                 {simplifiedStats.absent}
               </Text>
-              <Text style={styles.simpleStatLabel}>Absent</Text>
+              <Text style={attendanceCalendarStyles.simpleStatLabel}>Absent</Text>
             </View>
 
-            <View style={styles.simpleStatDivider} />
+            <View style={attendanceCalendarStyles.simpleStatDivider} />
 
-            <View style={styles.simpleStatItem}>
+            <View style={attendanceCalendarStyles.simpleStatItem}>
               <Text
                 style={[
-                  styles.simpleStatValue,
+                  attendanceCalendarStyles.simpleStatValue,
                   { color: brutalistColors.inProgress },
                 ]}
               >
                 {simplifiedStats.inProgress}
               </Text>
-              <Text style={styles.simpleStatLabel}>In Progress</Text>
+              <Text style={attendanceCalendarStyles.simpleStatLabel}>In Progress</Text>
             </View>
 
-            <View style={styles.simpleStatDivider} />
+            <View style={attendanceCalendarStyles.simpleStatDivider} />
 
-            <View style={styles.simpleStatItem}>
+            <View style={attendanceCalendarStyles.simpleStatItem}>
               <Text
                 style={[
-                  styles.simpleStatValue,
+                  attendanceCalendarStyles.simpleStatValue,
                   { color: brutalistColors.holiday },
                 ]}
               >
                 {simplifiedStats.holidays}
               </Text>
-              <Text style={styles.simpleStatLabel}>Holidays</Text>
+              <Text style={attendanceCalendarStyles.simpleStatLabel}>Holidays</Text>
             </View>
           </View>
         </BrutalistCard>
@@ -719,16 +692,16 @@ const fetchAttendanceData = useCallback(
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={attendanceCalendarStyles.loadingContainer}>
         <ActivityIndicator size="large" color={brutalistColors.primary} />
-        <Text style={styles.loadingText}>Loading attendance data...</Text>
+        <Text style={attendanceCalendarStyles.loadingText}>Loading attendance data...</Text>
       </View>
     );
   }
 
   return (
     <ScrollView
-      style={styles.container}
+      style={attendanceCalendarStyles.container}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
@@ -742,18 +715,18 @@ const fetchAttendanceData = useCallback(
       {renderSimplifiedStatisticsCard()}
 
       <BrutalistCard>
-        <Text style={styles.cardTitle}>ATTENDANCE CALENDAR</Text>
+        <Text style={attendanceCalendarStyles.cardTitle}>ATTENDANCE CALENDAR</Text>
         <Calendar
           current={`${selectedYear}-${String(selectedMonth).padStart(
             2,
-            "0"
+            "0",
           )}-01`}
           onDayPress={onDayPress}
           onMonthChange={onMonthChange}
           markingType="custom"
           markedDates={enhancedMarkedDates}
           theme={calendarTheme}
-          style={styles.calendar}
+          style={attendanceCalendarStyles.calendar}
           enableSwipeMonths={true}
           hideExtraDays={false}
           disableMonthChange={false}
@@ -763,60 +736,60 @@ const fetchAttendanceData = useCallback(
       {renderSelectedDateInfo()}
 
       <BrutalistCard>
-        <Text style={styles.cardTitle}>LEGEND</Text>
-        <View style={styles.legendItems}>
-          <View style={styles.legendItem}>
+        <Text style={attendanceCalendarStyles.cardTitle}>LEGEND</Text>
+        <View style={attendanceCalendarStyles.legendItems}>
+          <View style={attendanceCalendarStyles.legendItem}>
             <View
               style={[
-                styles.legendDot,
+                attendanceCalendarStyles.legendDot,
                 { backgroundColor: brutalistColors.present },
               ]}
             />
-            <Text style={styles.legendText}>Present</Text>
+            <Text style={attendanceCalendarStyles.legendText}>Present</Text>
           </View>
-          <View style={styles.legendItem}>
+          <View style={attendanceCalendarStyles.legendItem}>
             <View
               style={[
-                styles.legendDot,
+                attendanceCalendarStyles.legendDot,
                 { backgroundColor: brutalistColors.absent },
               ]}
             />
-            <Text style={styles.legendText}>Absent</Text>
+            <Text style={attendanceCalendarStyles.legendText}>Absent</Text>
           </View>
-          <View style={styles.legendItem}>
+          <View style={attendanceCalendarStyles.legendItem}>
             <View
               style={[
-                styles.legendDot,
+                attendanceCalendarStyles.legendDot,
                 { backgroundColor: brutalistColors.inProgress },
               ]}
             />
-            <Text style={styles.legendText}>In Progress</Text>
+            <Text style={attendanceCalendarStyles.legendText}>In Progress</Text>
           </View>
-          <View style={styles.legendItem}>
+          <View style={attendanceCalendarStyles.legendItem}>
             <View
               style={[
-                styles.legendDot,
+                attendanceCalendarStyles.legendDot,
                 { backgroundColor: brutalistColors.weekend },
               ]}
             />
-            <Text style={styles.legendText}>Weekend</Text>
+            <Text style={attendanceCalendarStyles.legendText}>Weekend</Text>
           </View>
-          <View style={styles.legendItem}>
+          <View style={attendanceCalendarStyles.legendItem}>
             <View
               style={[
-                styles.legendDot,
+                attendanceCalendarStyles.legendDot,
                 { backgroundColor: brutalistColors.holiday },
               ]}
             />
-            <Text style={styles.legendText}>Holiday</Text>
+            <Text style={attendanceCalendarStyles.legendText}>Holiday</Text>
           </View>
           {fieldTripDates &&
             Array.isArray(fieldTripDates) &&
             fieldTripDates.length > 0 && (
-              <View style={styles.legendItem}>
+              <View style={attendanceCalendarStyles.legendItem}>
                 <View
                   style={[
-                    styles.legendDot,
+                    attendanceCalendarStyles.legendDot,
                     {
                       backgroundColor: brutalistColors.background,
                       borderWidth: 3,
@@ -824,7 +797,7 @@ const fetchAttendanceData = useCallback(
                     },
                   ]}
                 />
-                <Text style={styles.legendText}>Field Trip</Text>
+                <Text style={attendanceCalendarStyles.legendText}>Field Trip</Text>
               </View>
             )}
         </View>
@@ -833,178 +806,82 @@ const fetchAttendanceData = useCallback(
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.offwhite,
-    paddingTop: 16,
-    paddingHorizontal: 8,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 50,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 18,
-    fontWeight: "700",
-    color: brutalistColors.text,
-  },
-  // Brutalist Card Styling
-  brutalistCardWrapper: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-    backgroundColor: brutalistColors.border,
-    transform: [{ translateX: 6 }, { translateY: 6 }],
-  },
-  brutalistCard: {
-    padding: 20,
-    borderWidth: 3,
-    borderColor: brutalistColors.border,
-    backgroundColor: brutalistColors.background,
-  },
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 3,
-    borderColor: brutalistColors.border,
-    paddingBottom: 12,
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: brutalistColors.text,
-    textTransform: "uppercase",
-  },
-  refreshButton: {
-    borderWidth: 2,
-    borderColor: brutalistColors.border,
-    padding: 8,
-  },
-  simpleStatsGrid: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-  },
-  simpleStatItem: {
-    alignItems: "center",
-    paddingHorizontal: 8,
-  },
-  simpleStatValue: {
-    fontSize: 28,
-    fontWeight: "900",
-  },
-  simpleStatLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: brutalistColors.text,
-    marginTop: 4,
-    textTransform: "uppercase",
-  },
-  simpleStatDivider: {
-    width: 2,
-    height: 50,
-    backgroundColor: brutalistColors.border,
-  },
-  calendar: {
-    marginTop: 16,
-  },
-  selectedDateTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: brutalistColors.text,
-    marginBottom: 16,
-    borderBottomWidth: 2,
-    borderColor: brutalistColors.border,
-    paddingBottom: 12,
-    flexWrap: 'wrap',
-  },
-  badgeContainer: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-    flexWrap: "wrap",
-  },
-  attendanceBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 2,
-    borderColor: brutalistColors.border,
-  },
-  attendanceBadgeText: {
-    fontSize: 14,
-    fontWeight: "700",
-    textTransform: "uppercase",
-  },
-  noDataContainer: {
-    alignItems: "center",
-    paddingVertical: 24,
-  },
-  noDataText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: brutalistColors.text,
-    marginTop: 12,
-    textAlign: "center",
-  },
-  noDataSubText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: brutalistColors.text,
-    marginTop: 4,
-    textAlign: "center",
-  },
-  attendanceDetailsContainer: {
-    gap: 12,
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 2,
-    borderTopColor: brutalistColors.border,
-  },
-  attendanceDetailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  attendanceDetailLabel: {
-    fontSize: 14,
-    color: brutalistColors.text,
-    fontWeight: "700",
-    width: 90,
-  },
-  attendanceDetailValue: {
-    fontSize: 14,
-    color: brutalistColors.text,
-    fontWeight: "500",
-    flex: 1,
-  },
-  legendItems: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-    marginTop: 12,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  legendDot: {
-    width: 16,
-    height: 16,
-    borderWidth: 2,
-    borderColor: brutalistColors.border,
-  },
-  legendText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: brutalistColors.text,
-  },
-});
+const getMarkedDates = (
+  attendanceDates: AttendanceDate[],
+  holidays: Holiday[],
+) => {
+  const marked: { [key: string]: any } = {};
+
+  const currentHour = new Date().getHours();
+  const today = new Date().toISOString().split("T")[0];
+
+  attendanceDates.forEach((item) => {
+    const dateStr = item.date.split("T")[0];
+    let dotColor = colors.error;
+    let backgroundColor = "#F87171";
+    let textColor = "#1F2937";
+
+    if (item.present === 1) {
+      if (item.attendance) {
+        const isAutoCompleted =
+          dateStr === today && currentHour >= 23 && !item.attendance.isCheckout;
+
+        if (isAutoCompleted || item.attendance.fullDay) {
+          dotColor = "#10B981";
+          backgroundColor = "#D1FAE5";
+          textColor = "#065F46";
+        } else if (!item.attendance.isCheckout) {
+          dotColor = "#F59E0B";
+          backgroundColor = "#FEF3C7";
+          textColor = "#92400E";
+        } else if (item.attendance.halfDay) {
+          dotColor = "#6B7280";
+          backgroundColor = "#F3F4F6";
+          textColor = "#1F2937";
+        } else {
+          dotColor = "#10B981";
+          backgroundColor = "#D1FAE5";
+          textColor = "#065F46";
+        }
+      }
+    }
+
+    marked[dateStr] = {
+      marked: true,
+      dotColor,
+      selected: false,
+      selectedColor: dotColor,
+      customStyles: {
+        container: {
+          backgroundColor,
+          borderRadius: 6,
+        },
+        text: {
+          color: textColor,
+          fontWeight: "bold",
+        },
+      },
+    };
+  });
+
+  holidays.forEach((h) => {
+    const dateStr = h.date.split("T")[0] || h.date;
+    if (!marked[dateStr]) {
+      marked[dateStr] = {
+        customStyles: {
+          container: {
+            backgroundColor: h.isWeekend ? "#E0E7FF" : "#FEF3C7",
+            borderRadius: 6,
+          },
+          text: {
+            color: h.isWeekend ? "#6366F1" : "#92400E",
+            fontWeight: "500",
+          },
+        },
+      };
+    }
+  });
+
+  return marked;
+};
+

@@ -12,7 +12,6 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   const notifications = useNotifications();
 
   useEffect(() => {
-    // Initialize notifications when user is logged in
     if (session) {
       console.log('Initializing notifications for session:', session);
       notifications.updateNotificationSchedules();

@@ -1,4 +1,3 @@
-// hooks/useAppPermissions.ts
 import { useCameraPermissions } from "expo-camera";
 import { useCallback, useEffect, useState } from "react";
 import { permissionsService, PermissionStatus } from "../services/permissionsService";
@@ -25,7 +24,6 @@ export function useAppPermissions(): AppPermissionsHook {
   const [isLoading, setIsLoading] = useState(false);
   const [isRequestingPermissions, setIsRequestingPermissions] = useState(false);
 
-  // Check all permissions
   const checkPermissions = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -58,7 +56,6 @@ export function useAppPermissions(): AppPermissionsHook {
     }
   }, [cameraPermission?.granted]);
 
-  // Request all permissions sequentially
   const requestAllPermissions = useCallback(async (): Promise<boolean> => {
     console.log("=== Starting requestAllPermissions ===");
     
@@ -74,7 +71,6 @@ export function useAppPermissions(): AppPermissionsHook {
       let audioGranted = false;
       let locationGranted = false;
 
-      // Step 1: Request camera permission
       console.log("Step 1: Requesting camera permission...");
       try {
         const cameraResult = await requestCameraPermission();
@@ -89,7 +85,6 @@ export function useAppPermissions(): AppPermissionsHook {
         cameraGranted = false;
       }
 
-      // Step 2: Request audio and location permissions
       console.log("Step 2: Requesting audio and location permissions...");
       try {
         const otherPermissionsResult = await permissionsService.requestAllPermissions();
@@ -103,7 +98,6 @@ export function useAppPermissions(): AppPermissionsHook {
         console.error("Error requesting other permissions:", error);
       }
 
-      // Step 3: Update permission states
       const finalPermissions: PermissionStatus = {
         camera: cameraGranted,
         audio: audioGranted,
@@ -120,7 +114,6 @@ export function useAppPermissions(): AppPermissionsHook {
         allGranted: finalPermissions.allGranted
       });
       
-      // Don't show alert here - let the parent component handle it
       return finalPermissions.allGranted;
       
     } catch (error) {
@@ -132,7 +125,6 @@ export function useAppPermissions(): AppPermissionsHook {
     }
   }, [requestCameraPermission, isRequestingPermissions]);
 
-  // Check permissions on mount and when camera permission changes
   useEffect(() => {
     checkPermissions();
   }, [checkPermissions]);

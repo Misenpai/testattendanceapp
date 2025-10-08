@@ -1,4 +1,5 @@
-import { colors } from "@/constants/colors";
+import { brutalistColors, colors } from "@/constants/colors";
+import { homeViewStyles } from "@/constants/style";
 import { useGeofence } from "@/hooks/useGeofence";
 import { checkoutAttendance } from "@/services/attendanceService";
 import {
@@ -13,9 +14,8 @@ import {
   Alert,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useAttendanceStore } from "../../store/attendanceStore";
@@ -37,26 +37,16 @@ interface HomeViewProps {
   todayAttendanceMarked?: boolean;
 }
 
-const brutalistColors = {
-  black: "#000000",
-  white: "#FFFFFF",
-  error: "#dc2626",
-  errorBg: "#fecaca",
-  success: "#16a34a",
-  warning: "#f97316",
-  gray: "#a1a1aa",
-  lightGray: "#f4f4f5",
-};
 
 function ValidationErrorCard({ reason }: { reason: string }) {
   return (
-    <View style={styles.validationErrorCard}>
+    <View style={homeViewStyles.validationErrorCard}>
       <FontAwesome6
         name="question-circle"
         size={20}
         color={brutalistColors.error}
       />
-      <Text style={styles.validationErrorText}>{reason}</Text>
+      <Text style={homeViewStyles.validationErrorText}>{reason}</Text>
     </View>
   );
 }
@@ -73,8 +63,8 @@ function LocationStatusCard({
   if (!details) return null;
 
   return (
-    <View style={styles.locationStatusCard}>
-      <View style={styles.statusRow}>
+    <View style={homeViewStyles.locationStatusCard}>
+      <View style={homeViewStyles.statusRow}>
         <FontAwesome6
           name="clock"
           size={16}
@@ -86,7 +76,7 @@ function LocationStatusCard({
         />
         <Text
           style={[
-            styles.statusText,
+            homeViewStyles.statusText,
             !details.isWithinWorkingHours && { color: brutalistColors.error },
           ]}
         >
@@ -98,7 +88,7 @@ function LocationStatusCard({
 
       {userLocationType === "CAMPUS" && (
         <>
-          <View style={styles.statusRow}>
+          <View style={homeViewStyles.statusRow}>
             <FontAwesome6
               name="university"
               size={16}
@@ -110,7 +100,7 @@ function LocationStatusCard({
             />
             <Text
               style={[
-                styles.statusText,
+                homeViewStyles.statusText,
                 !details.isInsideIIT && { color: brutalistColors.error },
               ]}
             >
@@ -120,7 +110,7 @@ function LocationStatusCard({
             </Text>
           </View>
 
-          <View style={styles.statusRow}>
+          <View style={homeViewStyles.statusRow}>
             <FontAwesome6
               name="building"
               size={16}
@@ -132,7 +122,7 @@ function LocationStatusCard({
             />
             <Text
               style={[
-                styles.statusText,
+                homeViewStyles.statusText,
                 !details.isInsideDepartment && { color: brutalistColors.error },
               ]}
             >
@@ -197,9 +187,9 @@ function SessionTimeIndicator() {
   };
 
   return (
-    <View style={[styles.sessionIndicator, { borderColor: getSessionColor() }]}>
+    <View style={[homeViewStyles.sessionIndicator, { borderColor: getSessionColor() }]}>
       <FontAwesome6 name="clock" size={14} color={getSessionColor()} />
-      <Text style={[styles.sessionText, { color: getSessionColor() }]}>
+      <Text style={[homeViewStyles.sessionText, { color: getSessionColor() }]}>
         {getSessionText()}
       </Text>
     </View>
@@ -221,13 +211,13 @@ function CheckoutButton({
   const isButtonDisabled = isCheckedOut || isAfter11PM || disabled;
 
   return (
-    <View style={styles.checkoutButtonContainer}>
+    <View style={homeViewStyles.checkoutButtonContainer}>
       <Pressable
         style={({ pressed }) => [
-          styles.checkoutButton,
-          isButtonDisabled && styles.buttonDisabled,
-          isCheckedOut && styles.checkedOutButton,
-          isAfter11PM && styles.autoCompletedButton,
+          homeViewStyles.checkoutButton,
+          isButtonDisabled && homeViewStyles.buttonDisabled,
+          isCheckedOut && homeViewStyles.checkedOutButton,
+          isAfter11PM && homeViewStyles.autoCompletedButton,
           {
             transform: [
               {
@@ -263,7 +253,7 @@ function CheckoutButton({
         )}
         <Text
           style={[
-            styles.checkoutButtonText,
+            homeViewStyles.checkoutButtonText,
             {
               color: isButtonDisabled
                 ? brutalistColors.gray
@@ -333,9 +323,9 @@ function AttendanceStatusCard({ attendance }: { attendance: any }) {
 
   return (
     <View
-      style={[styles.statusCard, { borderColor: getAttendanceTypeColor() }]}
+      style={[homeViewStyles.statusCard, { borderColor: getAttendanceTypeColor() }]}
     >
-      <View style={styles.statusHeader}>
+      <View style={homeViewStyles.statusHeader}>
         <FontAwesome6
           name={
             attendance.isCheckedOut || shouldShowAsPresent
@@ -345,35 +335,35 @@ function AttendanceStatusCard({ attendance }: { attendance: any }) {
           size={20}
           color={getAttendanceTypeColor()}
         />
-        <Text style={[styles.statusTitle, { color: getAttendanceTypeColor() }]}>
+        <Text style={[homeViewStyles.statusTitle, { color: getAttendanceTypeColor() }]}>
           {getStatusText()}
         </Text>
       </View>
-      <View style={styles.statusDetails}>
-        <View style={styles.statusRow}>
-          <Text style={styles.statusLabel}>Check-in:</Text>
-          <Text style={styles.statusValue}>
+      <View style={homeViewStyles.statusDetails}>
+        <View style={homeViewStyles.statusRow}>
+          <Text style={homeViewStyles.statusLabel}>Check-in:</Text>
+          <Text style={homeViewStyles.statusValue}>
             {formatTime(attendance.checkInTime)}
           </Text>
         </View>
         {attendance.checkOutTime && (
-          <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>Check-out:</Text>
-            <Text style={styles.statusValue}>
+          <View style={homeViewStyles.statusRow}>
+            <Text style={homeViewStyles.statusLabel}>Check-out:</Text>
+            <Text style={homeViewStyles.statusValue}>
               {formatTime(attendance.checkOutTime)}
             </Text>
           </View>
         )}
         {shouldShowAsPresent && !attendance.checkOutTime && (
-          <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>Auto-completed:</Text>
-            <Text style={styles.statusValue}>11:00 PM</Text>
+          <View style={homeViewStyles.statusRow}>
+            <Text style={homeViewStyles.statusLabel}>Auto-completed:</Text>
+            <Text style={homeViewStyles.statusValue}>11:00 PM</Text>
           </View>
         )}
-        <View style={styles.statusRow}>
-          <Text style={styles.statusLabel}>Location:</Text>
+        <View style={homeViewStyles.statusRow}>
+          <Text style={homeViewStyles.statusLabel}>Location:</Text>
           <Text
-            style={styles.statusValue}
+            style={homeViewStyles.statusValue}
             numberOfLines={2}
             ellipsizeMode="tail"
           >
@@ -395,22 +385,22 @@ function AttendanceMarkedCard({
   return (
     <Animated.View
       entering={FadeInDown.delay(150).springify()}
-      style={styles.attendanceMarkedCard}
+      style={homeViewStyles.attendanceMarkedCard}
     >
-      <View style={styles.attendanceMarkedContent}>
-        <View style={styles.attendanceMarkedIcon}>
+      <View style={homeViewStyles.attendanceMarkedContent}>
+        <View style={homeViewStyles.attendanceMarkedIcon}>
           <FontAwesome6
             name="circle-check"
             size={32}
             color={brutalistColors.black}
           />
         </View>
-        <View style={styles.attendanceMarkedText}>
-          <Text style={styles.attendanceMarkedTitle}>ATTENDANCE MARKED!</Text>
-          <Text style={styles.attendanceMarkedSubtitle}>
+        <View style={homeViewStyles.attendanceMarkedText}>
+          <Text style={homeViewStyles.attendanceMarkedTitle}>ATTENDANCE MARKED!</Text>
+          <Text style={homeViewStyles.attendanceMarkedSubtitle}>
             You&apos;ve already marked your attendance for today
           </Text>
-          <Text style={styles.attendanceMarkedTime}>
+          <Text style={homeViewStyles.attendanceMarkedTime}>
             {new Date().toLocaleDateString("en", {
               weekday: "long",
               year: "numeric",
@@ -540,28 +530,28 @@ export function HomeView({
 
   if (todayAttendanceMarked && todayRecord) {
     return (
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView style={homeViewStyles.container} showsVerticalScrollIndicator={false}>
         <Animated.View
           entering={FadeInDown.delay(100).springify()}
-          style={styles.headerCard}
+          style={homeViewStyles.headerCard}
         >
-          <View style={styles.headerContent}>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.greeting}>GOOD {getTimeOfDay()}!</Text>
-              <Text style={styles.headerTitle}>ATTENDANCE STATUS</Text>
-              <Text style={styles.headerSubtitle}>
+          <View style={homeViewStyles.headerContent}>
+            <View style={homeViewStyles.headerTextContainer}>
+              <Text style={homeViewStyles.greeting}>GOOD {getTimeOfDay()}!</Text>
+              <Text style={homeViewStyles.headerTitle}>ATTENDANCE STATUS</Text>
+              <Text style={homeViewStyles.headerSubtitle}>
                 {userLocationType === "FIELDTRIP"
                   ? "📍 OUTSIDE IIT (FIELD TRIP)"
                   : "📍 IIT GUWAHATI - DEPARTMENT BUILDING"}
               </Text>
-              <View style={styles.locationTypeBadge}>
-                <Text style={styles.locationTypeText}>
+              <View style={homeViewStyles.locationTypeBadge}>
+                <Text style={homeViewStyles.locationTypeText}>
                   MODE:{" "}
                   {userLocationType === "FIELDTRIP" ? "FIELD TRIP" : "ABSOLUTE"}
                 </Text>
               </View>
             </View>
-            <View style={styles.headerIcon}>
+            <View style={homeViewStyles.headerIcon}>
               <FontAwesome6
                 name="calendar-check"
                 size={40}
@@ -579,59 +569,59 @@ export function HomeView({
         {todayRecord.isCheckedOut && (
           <Animated.View
             entering={FadeInDown.delay(200).springify()}
-            style={styles.sectionCard}
+            style={homeViewStyles.sectionCard}
           >
-            <View style={styles.sectionHeader}>
+            <View style={homeViewStyles.sectionHeader}>
               <FontAwesome6
                 name="circle-info"
                 size={20}
                 color={brutalistColors.black}
               />
-              <Text style={styles.sectionTitle}>TODAY&apos;S SUMMARY</Text>
+              <Text style={homeViewStyles.sectionTitle}>TODAY&apos;S SUMMARY</Text>
             </View>
-            <Text style={styles.sectionDescription}>
+            <Text style={homeViewStyles.sectionDescription}>
               Your attendance has been successfully recorded and completed for
               today.
             </Text>
 
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}>
+            <View style={homeViewStyles.summaryRow}>
+              <View style={homeViewStyles.summaryItem}>
                 <FontAwesome6
                   name="clock"
                   size={16}
                   color={brutalistColors.gray}
                 />
-                <Text style={styles.summaryText}>
+                <Text style={homeViewStyles.summaryText}>
                   Checked in at {formatTime(todayRecord.checkInTime ?? null)}
                 </Text>
               </View>
-              <View style={styles.summaryItem}>
+              <View style={homeViewStyles.summaryItem}>
                 <FontAwesome6
                   name="clock"
                   size={16}
                   color={brutalistColors.gray}
                 />
-                <Text style={styles.summaryText}>
+                <Text style={homeViewStyles.summaryText}>
                   Checked out at {formatTime(todayRecord.checkOutTime ?? null)}
                 </Text>
               </View>
-              <View style={styles.summaryItem}>
+              <View style={homeViewStyles.summaryItem}>
                 <FontAwesome6
                   name="location-dot"
                   size={16}
                   color={brutalistColors.gray}
                 />
-                <Text style={styles.summaryText}>
+                <Text style={homeViewStyles.summaryText}>
                   {todayRecord.takenLocation || "Location not recorded"}
                 </Text>
               </View>
-              <View style={styles.summaryItem}>
+              <View style={homeViewStyles.summaryItem}>
                 <FontAwesome6
                   name="calendar"
                   size={16}
                   color={brutalistColors.gray}
                 />
-                <Text style={styles.summaryText}>
+                <Text style={homeViewStyles.summaryText}>
                   {todayRecord.attendanceType === "FULL_DAY"
                     ? "Full Day"
                     : "Half Day"}{" "}
@@ -646,17 +636,17 @@ export function HomeView({
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={homeViewStyles.container} showsVerticalScrollIndicator={false}>
       <Animated.View
         entering={FadeInDown.delay(100).springify()}
-        style={styles.headerCard}
+        style={homeViewStyles.headerCard}
       >
-        <View style={styles.headerContent}>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.greeting}>GOOD {getTimeOfDay()}!</Text>
-            <Text style={styles.headerTitle}>MARK YOUR ATTENDANCE</Text>
+        <View style={homeViewStyles.headerContent}>
+          <View style={homeViewStyles.headerTextContainer}>
+            <Text style={homeViewStyles.greeting}>GOOD {getTimeOfDay()}!</Text>
+            <Text style={homeViewStyles.headerTitle}>MARK YOUR ATTENDANCE</Text>
           </View>
-          <View style={styles.headerIcon}>
+          <View style={homeViewStyles.headerIcon}>
             <FontAwesome6
               name="calendar-check"
               size={40}
@@ -668,13 +658,13 @@ export function HomeView({
         {validationStatus?.details && (
           <>
             {!validationStatus.isValid && (
-              <View style={styles.cannotMarkBanner}>
+              <View style={homeViewStyles.cannotMarkBanner}>
                 <FontAwesome6
                   name="exclamation-triangle"
                   size={16}
                   color={brutalistColors.black}
                 />
-                <Text style={styles.cannotMarkBannerText}>
+                <Text style={homeViewStyles.cannotMarkBannerText}>
                   CANNOT MARK ATTENDANCE
                 </Text>
               </View>
@@ -694,22 +684,22 @@ export function HomeView({
             <ValidationErrorCard reason={validationStatus.reason} />
           )}
 
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>
+        <View style={homeViewStyles.statsRow}>
+          <View style={homeViewStyles.statItem}>
+            <Text style={homeViewStyles.statValue}>
               {photos.length}/{totalPhotos}
             </Text>
-            <Text style={styles.statLabel}>PHOTO</Text>
+            <Text style={homeViewStyles.statLabel}>PHOTO</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{audioRecording ? "✓" : "−"}</Text>
-            <Text style={styles.statLabel}>AUDIO</Text>
+          <View style={homeViewStyles.statDivider} />
+          <View style={homeViewStyles.statItem}>
+            <Text style={homeViewStyles.statValue}>{audioRecording ? "✓" : "−"}</Text>
+            <Text style={homeViewStyles.statLabel}>AUDIO</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{new Date().getDate()}</Text>
-            <Text style={styles.statLabel}>
+          <View style={homeViewStyles.statDivider} />
+          <View style={homeViewStyles.statItem}>
+            <Text style={homeViewStyles.statValue}>{new Date().getDate()}</Text>
+            <Text style={homeViewStyles.statLabel}>
               {new Date()
                 .toLocaleDateString("en", { month: "short" })
                 .toUpperCase()}
@@ -720,13 +710,13 @@ export function HomeView({
 
       <Animated.View
         entering={FadeInDown.delay(200).springify()}
-        style={styles.sectionCard}
+        style={homeViewStyles.sectionCard}
       >
-        <View style={styles.sectionHeader}>
+        <View style={homeViewStyles.sectionHeader}>
           <FontAwesome6 name="camera" size={20} color={brutalistColors.black} />
-          <Text style={styles.sectionTitle}>PHOTO VERIFICATION</Text>
+          <Text style={homeViewStyles.sectionTitle}>PHOTO VERIFICATION</Text>
         </View>
-        <Text style={styles.sectionDescription}>
+        <Text style={homeViewStyles.sectionDescription}>
           Capture today&apos;s required photo for attendance verification
         </Text>
         <PhotoGrid
@@ -739,17 +729,17 @@ export function HomeView({
 
       <Animated.View
         entering={FadeInDown.delay(300).springify()}
-        style={styles.sectionCard}
+        style={homeViewStyles.sectionCard}
       >
-        <View style={styles.sectionHeader}>
+        <View style={homeViewStyles.sectionHeader}>
           <FontAwesome6
             name="microphone"
             size={20}
             color={brutalistColors.black}
           />
-          <Text style={styles.sectionTitle}>VOICE VERIFICATION</Text>
+          <Text style={homeViewStyles.sectionTitle}>VOICE VERIFICATION</Text>
         </View>
-        <Text style={styles.sectionDescription}>
+        <Text style={homeViewStyles.sectionDescription}>
           Record your voice saying today&apos;s date
         </Text>
         <AudioSection
@@ -760,7 +750,7 @@ export function HomeView({
 
       <Animated.View
         entering={FadeInDown.delay(400).springify()}
-        style={styles.actionSection}
+        style={homeViewStyles.actionSection}
       >
         <ActionButtons
           photos={photos}
@@ -784,342 +774,3 @@ function getTimeOfDay() {
   return "EVENING";
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.offwhite,
-  },
-  brutalistCard: {
-    borderWidth: 4,
-    borderColor: brutalistColors.black,
-    backgroundColor: brutalistColors.white,
-    padding: 20,
-    margin: 16,
-    shadowColor: brutalistColors.black,
-    shadowOffset: { width: 10, height: 10 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 10,
-  },
-  headerCard: {
-    margin: 16,
-    borderWidth: 4,
-    borderColor: brutalistColors.black,
-    backgroundColor: colors.lightGreen,
-    padding: 20,
-    shadowColor: brutalistColors.black,
-    shadowOffset: { width: 10, height: 10 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 10,
-  },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  greeting: {
-    fontSize: 14,
-    color: brutalistColors.black,
-    marginBottom: 4,
-    fontWeight: "bold",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: brutalistColors.black,
-    marginBottom: 4,
-    textTransform: "uppercase",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: brutalistColors.black,
-    textTransform: "uppercase",
-    flexWrap: "wrap",
-    maxWidth: "100%",
-  },
-  headerIcon: {
-    marginLeft: 16,
-  },
-  statsRow: {
-    flexDirection: "row",
-    borderWidth: 2,
-    borderColor: brutalistColors.black,
-    padding: 16,
-    marginTop: 20,
-    backgroundColor: brutalistColors.white,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: brutalistColors.black,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: brutalistColors.black,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-  },
-  statDivider: {
-    width: 2,
-    backgroundColor: brutalistColors.black,
-  },
-  sectionCard: {
-    borderWidth: 4,
-    borderColor: brutalistColors.black,
-    backgroundColor: brutalistColors.white,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 20,
-    shadowColor: brutalistColors.black,
-    shadowOffset: { width: 10, height: 10 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 10,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-    borderBottomWidth: 2,
-    borderColor: brutalistColors.black,
-    paddingBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: brutalistColors.black,
-    marginLeft: 8,
-    textTransform: "uppercase",
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: brutalistColors.black,
-    marginBottom: 16,
-    fontWeight: "600",
-  },
-  actionSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
-  attendanceMarkedCard: {
-    borderWidth: 4,
-    borderColor: brutalistColors.black,
-    backgroundColor: brutalistColors.white,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 20,
-    shadowColor: brutalistColors.black,
-    shadowOffset: { width: 10, height: 10 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 10,
-  },
-  attendanceMarkedContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  attendanceMarkedIcon: {
-    marginRight: 16,
-  },
-  attendanceMarkedText: {
-    flex: 1,
-  },
-  attendanceMarkedTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: brutalistColors.black,
-    marginBottom: 4,
-    textTransform: "uppercase",
-  },
-  attendanceMarkedSubtitle: {
-    fontSize: 14,
-    color: brutalistColors.black,
-    marginBottom: 8,
-    fontWeight: "600",
-  },
-  attendanceMarkedTime: {
-    fontSize: 12,
-    color: brutalistColors.gray,
-  },
-  summaryRow: {
-    gap: 12,
-    marginTop: 12,
-  },
-  summaryItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  summaryText: {
-    fontSize: 14,
-    color: brutalistColors.black,
-    fontWeight: "600",
-  },
-  sessionIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 2,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginTop: 16,
-  },
-  sessionText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-  },
-  checkoutButtonContainer: {
-    marginVertical: 16,
-    alignItems: "center",
-  },
-  checkoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    backgroundColor: "#fff",
-    borderWidth: 2,
-    borderColor: brutalistColors.error,
-    borderRadius: 4,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 3,
-  },
-  checkoutButtonText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  buttonDisabled: {
-    borderColor: brutalistColors.gray,
-    shadowColor: brutalistColors.gray,
-  },
-  checkedOutButton: {
-    borderColor: brutalistColors.success,
-  },
-  autoCompletedButton: {
-    borderColor: brutalistColors.warning,
-    shadowColor: brutalistColors.warning,
-  },
-  statusCard: {
-    backgroundColor: brutalistColors.white,
-    borderWidth: 2,
-    padding: 16,
-    marginTop: 16,
-  },
-  statusHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 12,
-    flexWrap: "wrap",
-  },
-  statusTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    textTransform: "uppercase",
-    flex: 1,
-    flexWrap: "wrap",
-  },
-  statusDetails: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: "#F5F5F5",
-    borderWidth: 1,
-    borderColor: "#000000",
-    borderRadius: 8,
-    gap: 8,
-  },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  statusLabel: {
-    fontSize: 14,
-    color: brutalistColors.gray,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    minWidth: 90,
-  },
-  statusValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: brutalistColors.black,
-    flex: 1,
-    flexWrap: "wrap",
-  },
-  locationTypeBadge: {
-    backgroundColor: brutalistColors.white,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginTop: 8,
-    alignSelf: "flex-start",
-  },
-  locationTypeText: {
-    fontSize: 12,
-    color: brutalistColors.black,
-    fontWeight: "900",
-    textTransform: "uppercase",
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: brutalistColors.black,
-  },
-  cannotMarkBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: brutalistColors.errorBg,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginTop: 16,
-    borderWidth: 2,
-    borderColor: brutalistColors.black,
-  },
-  cannotMarkBannerText: {
-    color: brutalistColors.black,
-    fontSize: 14,
-    fontWeight: "900",
-    textTransform: "uppercase",
-  },
-  locationStatusCard: {
-    borderWidth: 2,
-    borderColor: brutalistColors.black,
-    backgroundColor: brutalistColors.white,
-    padding: 16,
-    marginTop: -2,
-    gap: 12,
-  },
-  validationErrorCard: {
-    borderWidth: 2,
-    borderColor: brutalistColors.black,
-    backgroundColor: brutalistColors.errorBg,
-    padding: 16,
-    marginTop: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  validationErrorText: {
-    color: brutalistColors.black,
-    fontSize: 14,
-    fontWeight: "bold",
-    flex: 1,
-    lineHeight: 20,
-  },
-});

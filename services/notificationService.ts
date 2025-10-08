@@ -1,11 +1,9 @@
-// services/notificationService.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Alert, Platform } from "react-native";
 const { SchedulableTriggerInputTypes } = Notifications;
 
-// Configure notification handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -16,13 +14,10 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// FIX: Removed unused ScheduledNotification interface
-
 class NotificationService {
   private notificationIds: Map<string, string> = new Map();
   private hasPermission: boolean = false;
 
-  // Session timing constants
   private readonly SESSION_TIMES = {
     FORENOON_START: { hour: 9, minute: 30 },
     FORENOON_END: { hour: 13, minute: 0 },
@@ -30,14 +25,12 @@ class NotificationService {
     AFTERNOON_END: { hour: 17, minute: 30 },
   };
 
-  // Reminder times
   private readonly REMINDER_TIMES = [
     { hour: 11, minute: 0, type: "morning" },
     { hour: 13, minute: 0, type: "afternoon" },
     { hour: 16, minute: 0, type: "evening" },
   ];
 
-  // Checkout reminder time (5:00 PM)
   private readonly CHECKOUT_REMINDER_TIME = { hour: 17, minute: 0 };
 
   constructor() {
@@ -48,7 +41,6 @@ class NotificationService {
     await this.registerForPushNotifications();
     await this.loadScheduledNotifications();
 
-    // Listen for notification responses
     Notifications.addNotificationResponseReceivedListener(
       this.handleNotificationResponse
     );
@@ -81,7 +73,6 @@ class NotificationService {
 
       this.hasPermission = true;
 
-      // Configure notification channel for Android
       if (Platform.OS === "android") {
         await Notifications.setNotificationChannelAsync("attendance", {
           name: "Attendance Reminders",
@@ -113,20 +104,16 @@ class NotificationService {
     const { notification } = response;
     const data = notification.request.content.data;
 
-    // Handle different notification types
     switch (data?.type) {
       case "attendance":
-        // Navigate to attendance screen
         console.log("Navigate to attendance screen");
         break;
       case "checkout":
-        // Navigate to checkout screen
         console.log("Navigate to checkout screen");
         break;
     }
   };
 
-  // Calculate remaining session time
   private calculateSessionTime(): {
     session: string;
     remainingMinutes: number;
@@ -137,7 +124,6 @@ class NotificationService {
     const currentMinutes = now.getMinutes();
     const currentTimeInMinutes = currentHours * 60 + currentMinutes;
 
-    // Forenoon session: 9:00 AM - 1:00 PM
     const forenoonStart =
       this.SESSION_TIMES.FORENOON_START.hour * 60 +
       this.SESSION_TIMES.FORENOON_START.minute;
@@ -145,7 +131,6 @@ class NotificationService {
       this.SESSION_TIMES.FORENOON_END.hour * 60 +
       this.SESSION_TIMES.FORENOON_END.minute;
 
-    // Afternoon session: 1:00 PM - 5:30 PM
     const afternoonStart =
       this.SESSION_TIMES.AFTERNOON_START.hour * 60 +
       this.SESSION_TIMES.AFTERNOON_START.minute;
@@ -189,7 +174,6 @@ class NotificationService {
     }
   }
 
-  // Format remaining time for display
   private formatRemainingTime(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -200,7 +184,6 @@ class NotificationService {
     return `${mins}min`;
   }
 
-  // Get attendance reminder message with session timer
   private getAttendanceReminderMessage(type: string): string {
     const sessionInfo = this.calculateSessionTime();
     const baseMessages = {
@@ -215,7 +198,6 @@ class NotificationService {
       baseMessages[type as keyof typeof baseMessages] ||
       "Time to mark your attendance!";
 
-    // Add session timer info if in working hours
     if (
       sessionInfo.session === "FORENOON" ||
       sessionInfo.session === "AFTERNOON"
@@ -229,14 +211,12 @@ class NotificationService {
     return baseMessage;
   }
 
-  // Schedule attendance reminders with session timer
   async scheduleAttendanceReminders(hasMarkedAttendance: boolean = false) {
     if (!this.hasPermission) {
       await this.registerForPushNotifications();
       if (!this.hasPermission) return;
     }
 
-    // Cancel existing attendance reminders
     await this.cancelAttendanceReminders();
 
     if (hasMarkedAttendance) {
@@ -251,7 +231,6 @@ class NotificationService {
       const reminderTimeInMinutes =
         reminderTime.hour * 60 + reminderTime.minute;
 
-      // Only schedule if the reminder time hasn't passed
       if (reminderTimeInMinutes > currentTimeInMinutes) {
         const notificationId = await Notifications.scheduleNotificationAsync({
           content: {
@@ -261,7 +240,6 @@ class NotificationService {
             sound: "default",
             priority: Notifications.AndroidNotificationPriority.HIGH,
           },
-          // FIX: Use a trigger object instead of a Date object
           trigger: {
             type: SchedulableTriggerInputTypes.CALENDAR,
             hour: reminderTime.hour,
@@ -283,7 +261,6 @@ class NotificationService {
     await this.saveScheduledNotifications();
   }
 
-  // Schedule checkout reminder with session info
   async scheduleCheckoutReminder(
     hasCheckedOut: boolean = false,
     checkInTime?: string
@@ -293,7 +270,6 @@ class NotificationService {
       if (!this.hasPermission) return;
     }
 
-    // Cancel existing checkout reminder
     await this.cancelCheckoutReminder();
 
     if (hasCheckedOut) {
@@ -309,7 +285,6 @@ class NotificationService {
 
     if (checkoutTimeInMinutes > currentTimeInMinutes && checkInTime) {
       const checkInDate = new Date(checkInTime);
-      // Create a date object for checkout time to calculate duration
       const checkoutDate = new Date();
       checkoutDate.setHours(
         this.CHECKOUT_REMINDER_TIME.hour,
@@ -318,7 +293,6 @@ class NotificationService {
         0
       );
 
-      // Calculate worked hours
       const workedHours = Math.floor(
         (checkoutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60)
       );
@@ -326,7 +300,6 @@ class NotificationService {
         ((checkoutDate.getTime() - checkInDate.getTime()) / (1000 * 60)) % 60
       );
 
-      // Get session info
       const sessionInfo = this.calculateSessionTime();
       let sessionText = "";
 
@@ -345,7 +318,6 @@ class NotificationService {
           sound: "default",
           priority: Notifications.AndroidNotificationPriority.HIGH,
         },
-        // FIX: Use a trigger object instead of a Date object
         trigger: {
           type: SchedulableTriggerInputTypes.CALENDAR,
           hour: this.CHECKOUT_REMINDER_TIME.hour,
@@ -363,7 +335,6 @@ class NotificationService {
     await this.saveScheduledNotifications();
   }
 
-  // Show session notification when user logs in
   async showLoginSessionNotification() {
     if (!this.hasPermission) return;
 
@@ -402,11 +373,10 @@ class NotificationService {
         sound: "default",
         priority: Notifications.AndroidNotificationPriority.DEFAULT,
       },
-      trigger: null, // Show immediately
+      trigger: null,
     });
   }
 
-  // Cancel all attendance reminders
   async cancelAttendanceReminders() {
     const reminderTypes = ["morning", "afternoon", "evening"];
     for (const type of reminderTypes) {
@@ -419,7 +389,6 @@ class NotificationService {
     await this.saveScheduledNotifications();
   }
 
-  // Cancel checkout reminder
   async cancelCheckoutReminder() {
     const id = this.notificationIds.get("checkout");
     if (id) {
@@ -429,14 +398,12 @@ class NotificationService {
     await this.saveScheduledNotifications();
   }
 
-  // Cancel all scheduled notifications
   async cancelAllNotifications() {
     await Notifications.cancelAllScheduledNotificationsAsync();
     this.notificationIds.clear();
     await AsyncStorage.removeItem("scheduled_notifications");
   }
 
-  // Save scheduled notifications to storage
   private async saveScheduledNotifications() {
     try {
       const notifications = Array.from(this.notificationIds.entries());
@@ -449,7 +416,6 @@ class NotificationService {
     }
   }
 
-  // Load scheduled notifications from storage
   private async loadScheduledNotifications() {
     try {
       const stored = await AsyncStorage.getItem("scheduled_notifications");
@@ -462,27 +428,22 @@ class NotificationService {
     }
   }
 
-  // Update notifications based on attendance status
   async updateNotificationsForAttendanceStatus(
     hasMarkedAttendance: boolean,
     hasCheckedOut: boolean,
     checkInTime?: string
   ) {
     if (hasMarkedAttendance) {
-      // Cancel attendance reminders if attendance is marked
       await this.cancelAttendanceReminders();
 
-      // Schedule checkout reminder if not checked out
       if (!hasCheckedOut && checkInTime) {
         await this.scheduleCheckoutReminder(false, checkInTime);
       }
     } else {
-      // Schedule attendance reminders if not marked
       await this.scheduleAttendanceReminders(false);
     }
   }
 
-  // Test notification (for debugging)
   async sendTestNotification() {
     const sessionInfo = this.calculateSessionTime();
     let sessionText = "";

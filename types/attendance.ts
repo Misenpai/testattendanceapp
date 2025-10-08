@@ -2,7 +2,7 @@ import { CameraCapturedPicture } from "expo-camera";
 
 export interface AudioRecording {
   uri: string;
-  duration?: number; // Duration in seconds
+  duration?: number;
 }
 
 export interface AttendanceData {

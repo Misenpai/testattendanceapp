@@ -1,4 +1,3 @@
-// component/map/ExpandedMapView.tsx
 import { expandedMapStyles } from "@/constants/style";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import React from "react";

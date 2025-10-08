@@ -36,8 +36,7 @@ export const getUserProfileByEmployeeNumber = async (employeeNumber: string): Pr
     console.log('Fetching profile for employeeNumber:', employeeNumber);
     
     const apiClient = createApiClient();
-    const { data } = await apiClient.get(`/profile/${employeeNumber}`); // Changed from /profile/username/
-    
+    const { data } = await apiClient.get(`/profile/${employeeNumber}`);
     console.log('Profile response:', data);
     
     return {
@@ -46,10 +45,7 @@ export const getUserProfileByEmployeeNumber = async (employeeNumber: string): Pr
     };
   } catch (error: any) {
     console.error('Get profile error:', error);
-    
-    // Handle token expiry
     if (error.response?.status === 403 || error.response?.status === 401) {
-      // Force logout
       await useAuthStore.getState().signOut();
       return {
         success: false,

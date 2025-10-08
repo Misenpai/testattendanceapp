@@ -1,17 +1,15 @@
-// component/ui/TermsAndConditionsScreen.tsx
 import { colors } from "@/constants/colors";
+import { termsAndConditionsScreenStyles } from "@/constants/style";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
@@ -63,93 +61,93 @@ export function TermsAndConditionsScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={termsAndConditionsScreenStyles.container}>
       {/* Header */}
       <Animated.View
         entering={FadeInDown.delay(100).springify()}
-        style={styles.header}
+        style={termsAndConditionsScreenStyles.header}
       >
-        <View style={styles.headerContent}>
-          <View style={styles.logoBox}>
+        <View style={termsAndConditionsScreenStyles.headerContent}>
+          <View style={termsAndConditionsScreenStyles.logoBox}>
             <FontAwesome6 name="shield-halved" size={40} color={colors.black} />
           </View>
-          <Text style={styles.headerTitle}>TERMS & CONDITIONS</Text>
-          <Text style={styles.headerSubtitle}>
+          <Text style={termsAndConditionsScreenStyles.headerTitle}>TERMS & CONDITIONS</Text>
+          <Text style={termsAndConditionsScreenStyles.headerSubtitle}>
             PLEASE READ AND ACCEPT OUR TERMS TO CONTINUE
           </Text>
         </View>
       </Animated.View>
 
       {/* Content */}
-      <View style={styles.contentContainer}>
+      <View style={termsAndConditionsScreenStyles.contentContainer}>
         <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          style={termsAndConditionsScreenStyles.scrollView}
+          contentContainerStyle={termsAndConditionsScreenStyles.scrollContent}
           showsVerticalScrollIndicator={true}
           onScroll={handleScroll}
           onContentSizeChange={handleContentSizeChange}
           scrollEventThrottle={16}
         >
           {/* Privacy & Data Protection */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
+          <View style={termsAndConditionsScreenStyles.section}>
+            <View style={termsAndConditionsScreenStyles.sectionHeader}>
               <FontAwesome6 name="lock" size={20} color={colors.black} />
-              <Text style={styles.sectionTitle}>PRIVACY & DATA PROTECTION</Text>
+              <Text style={termsAndConditionsScreenStyles.sectionTitle}>PRIVACY & DATA PROTECTION</Text>
             </View>
-            <Text style={styles.sectionText}>
+            <Text style={termsAndConditionsScreenStyles.sectionText}>
               YOUR PRIVACY IS OUR TOP PRIORITY. THIS IS HOW WE HANDLE YOUR DATA:
             </Text>
-            <View style={styles.bulletPoint}>
-              <Text style={styles.bulletMarker}>-</Text>
-              <Text style={styles.bulletText}>
-                <Text style={styles.boldText}>NO MALICIOUS USE:</Text> WE NEVER
+            <View style={termsAndConditionsScreenStyles.bulletPoint}>
+              <Text style={termsAndConditionsScreenStyles.bulletMarker}>-</Text>
+              <Text style={termsAndConditionsScreenStyles.bulletText}>
+                <Text style={termsAndConditionsScreenStyles.boldText}>NO MALICIOUS USE:</Text> WE NEVER
                 USE YOUR DATA FOR HARMFUL PURPOSES.
               </Text>
             </View>
-            <View style={styles.bulletPoint}>
-              <Text style={styles.bulletMarker}>-</Text>
-              <Text style={styles.bulletText}>
-                <Text style={styles.boldText}>SECURE STORAGE:</Text> ALL DATA IS
+            <View style={termsAndConditionsScreenStyles.bulletPoint}>
+              <Text style={termsAndConditionsScreenStyles.bulletMarker}>-</Text>
+              <Text style={termsAndConditionsScreenStyles.bulletText}>
+                <Text style={termsAndConditionsScreenStyles.boldText}>SECURE STORAGE:</Text> ALL DATA IS
                 ENCRYPTED AND SAFELY STORED.
               </Text>
             </View>
-            <View style={styles.bulletPoint}>
-              <Text style={styles.bulletMarker}>-</Text>
-              <Text style={styles.bulletText}>
-                <Text style={styles.boldText}>NO THIRD-PARTY SHARING:</Text>{" "}
+            <View style={termsAndConditionsScreenStyles.bulletPoint}>
+              <Text style={termsAndConditionsScreenStyles.bulletMarker}>-</Text>
+              <Text style={termsAndConditionsScreenStyles.bulletText}>
+                <Text style={termsAndConditionsScreenStyles.boldText}>NO THIRD-PARTY SHARING:</Text>{" "}
                 YOUR DATA STAYS WITH US.
               </Text>
             </View>
           </View>
 
           {/* Data Usage */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
+          <View style={termsAndConditionsScreenStyles.section}>
+            <View style={termsAndConditionsScreenStyles.sectionHeader}>
               <FontAwesome6 name="database" size={20} color={colors.black} />
-              <Text style={styles.sectionTitle}>HOW WE USE YOUR DATA</Text>
+              <Text style={termsAndConditionsScreenStyles.sectionTitle}>HOW WE USE YOUR DATA</Text>
             </View>
-            <Text style={styles.sectionText}>DATA TYPES AND PURPOSES:</Text>
-            <Text style={styles.dataTypeTitle}>📸 PHOTOS & IMAGES</Text>
-            <Text style={styles.dataDescription}>
+            <Text style={termsAndConditionsScreenStyles.sectionText}>DATA TYPES AND PURPOSES:</Text>
+            <Text style={termsAndConditionsScreenStyles.dataTypeTitle}>📸 PHOTOS & IMAGES</Text>
+            <Text style={termsAndConditionsScreenStyles.dataDescription}>
               USED ONLY FOR TRAINING AND IMPROVING ATTENDANCE VERIFICATION.
             </Text>
-            <Text style={styles.dataTypeTitle}>🎤 AUDIO RECORDINGS</Text>
-            <Text style={styles.dataDescription}>
+            <Text style={termsAndConditionsScreenStyles.dataTypeTitle}>🎤 AUDIO RECORDINGS</Text>
+            <Text style={termsAndConditionsScreenStyles.dataDescription}>
               USED ONLY FOR VOICE VERIFICATION TRAINING.
             </Text>
-            <Text style={styles.dataTypeTitle}>📍 LOCATION DATA</Text>
-            <Text style={styles.dataDescription}>
+            <Text style={termsAndConditionsScreenStyles.dataTypeTitle}>📍 LOCATION DATA</Text>
+            <Text style={termsAndConditionsScreenStyles.dataDescription}>
               USED ONLY TO VERIFY ATTENDANCE LOCATION.
             </Text>
-            <Text style={styles.dataTypeTitle}>👤 ACCOUNT INFORMATION</Text>
-            <Text style={styles.dataDescription}>
+            <Text style={termsAndConditionsScreenStyles.dataTypeTitle}>👤 ACCOUNT INFORMATION</Text>
+            <Text style={termsAndConditionsScreenStyles.dataDescription}>
               USED ONLY FOR LOGIN AND ATTENDANCE TRACKING.
             </Text>
           </View>
 
           {/* Agreement */}
-          <View style={styles.section}>
-            <Text style={styles.sectionText}>
+          <View style={termsAndConditionsScreenStyles.section}>
+            <Text style={termsAndConditionsScreenStyles.sectionText}>
               BY TAPPING &quot;ACCEPT TERMS & CONTINUE&quot;, YOU CONFIRM THAT
               YOU HAVE READ, UNDERSTOOD, AND AGREE TO THESE TERMS.
             </Text>
@@ -157,8 +155,8 @@ export function TermsAndConditionsScreen({
 
           {/* Scroll Indicator */}
           {isScrollable && !hasScrolledToEnd && (
-            <View style={styles.scrollIndicator}>
-              <Text style={styles.scrollIndicatorText}>
+            <View style={termsAndConditionsScreenStyles.scrollIndicator}>
+              <Text style={termsAndConditionsScreenStyles.scrollIndicatorText}>
                 ⇩ SCROLL DOWN TO CONTINUE ⇩
               </Text>
             </View>
@@ -169,13 +167,13 @@ export function TermsAndConditionsScreen({
       {/* Accept Button */}
       <Animated.View
         entering={FadeInUp.delay(400).springify()}
-        style={styles.buttonContainer}
+        style={termsAndConditionsScreenStyles.buttonContainer}
       >
         <TouchableOpacity
           style={[
-            styles.acceptButton,
+            termsAndConditionsScreenStyles.acceptButton,
             ((!hasScrolledToEnd && isScrollable) || isProcessing) &&
-              styles.buttonDisabled,
+              termsAndConditionsScreenStyles.buttonDisabled,
           ]}
           onPress={handleAccept}
           disabled={(!hasScrolledToEnd && isScrollable) || isProcessing}
@@ -184,7 +182,7 @@ export function TermsAndConditionsScreen({
           {isProcessing ? (
             <>
               <ActivityIndicator size="small" color={colors.white} />
-              <Text style={styles.acceptButtonText}>SETTING UP...</Text>
+              <Text style={termsAndConditionsScreenStyles.acceptButtonText}>SETTING UP...</Text>
             </>
           ) : (
             <>
@@ -193,7 +191,7 @@ export function TermsAndConditionsScreen({
                 size={20}
                 color={colors.black}
               />
-              <Text style={styles.acceptButtonText}>
+              <Text style={termsAndConditionsScreenStyles.acceptButtonText}>
                 ACCEPT TERMS & CONTINUE
               </Text>
             </>
@@ -201,7 +199,7 @@ export function TermsAndConditionsScreen({
         </TouchableOpacity>
 
         {!hasScrolledToEnd && isScrollable && (
-          <Text style={styles.buttonHelpText}>
+          <Text style={termsAndConditionsScreenStyles.buttonHelpText}>
             SCROLL TO THE BOTTOM TO ENABLE BUTTON
           </Text>
         )}
@@ -210,133 +208,3 @@ export function TermsAndConditionsScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.offwhite },
-  header: {
-    paddingTop: Platform.OS === "ios" ? 50 : 30,
-    paddingBottom: 20,
-    borderBottomWidth: 3,
-    borderColor: colors.black,
-  },
-  headerContent: { alignItems: "center", marginTop: 20 },
-  logoBox: {
-    width: 80,
-    height: 80,
-    borderWidth: 3,
-    borderColor: colors.black,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "900",
-    color: colors.black,
-    textTransform: "uppercase",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: colors.black,
-    textAlign: "center",
-    marginTop: 4,
-  },
-  contentContainer: { flex: 1 },
-  scrollView: { flex: 1, marginBottom: 100 },
-  scrollContent: { padding: 16, paddingBottom: 40 },
-  section: {
-    borderWidth: 3,
-    borderColor: colors.black,
-    backgroundColor: colors.white,
-    padding: 16,
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: colors.black,
-    marginLeft: 12,
-    textTransform: "uppercase",
-  },
-  sectionText: {
-    fontSize: 14,
-    color: colors.black,
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  bulletPoint: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  bulletMarker: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: colors.black,
-    marginRight: 8,
-  },
-  bulletText: { flex: 1, fontSize: 14, color: colors.black, lineHeight: 20 },
-  boldText: { fontWeight: "900", color: colors.black },
-  dataTypeTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: colors.black,
-    marginTop: 12,
-  },
-  dataDescription: {
-    fontSize: 13,
-    color: colors.black,
-    marginBottom: 8,
-    marginLeft: 8,
-  },
-  scrollIndicator: {
-    alignItems: "center",
-    marginTop: 20,
-    paddingVertical: 12,
-    borderTopWidth: 2,
-    borderColor: colors.black,
-  },
-  scrollIndicatorText: { fontSize: 14, color: colors.black, fontWeight: "900" },
-  buttonContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    paddingBottom: Platform.OS === "ios" ? 40 : 20,
-    borderTopWidth: 3,
-    borderColor: colors.black,
-    backgroundColor: colors.white,
-  },
-  acceptButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    borderWidth: 3,
-    borderColor: colors.black,
-    backgroundColor: colors.lightGreen,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-  },
-  buttonDisabled: {
-    backgroundColor: colors.gray[400],
-    borderColor: colors.black,
-  },
-  acceptButtonText: {
-    color: colors.black,
-    fontSize: 16,
-    fontWeight: "900",
-    textTransform: "uppercase",
-  },
-  buttonHelpText: {
-    textAlign: "center",
-    fontSize: 12,
-    color: colors.black,
-    marginTop: 8,
-  },
-});

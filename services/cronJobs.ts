@@ -1,4 +1,3 @@
-// src/services/cronJobs.ts
 import axios from "axios";
 import cron from "node-cron";
 

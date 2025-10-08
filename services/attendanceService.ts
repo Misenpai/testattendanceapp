@@ -1,4 +1,3 @@
-// services/attendanceService.ts
 import { useAuthStore } from "@/store/authStore";
 import { AttendanceProps } from "@/types/geofence";
 import axios from "axios";
@@ -38,9 +37,8 @@ interface AttendancePropsWithCoordinates extends AttendanceProps {
   longitude?: number;
 }
 
-// Update the upload function to use employeeNumber
 export const uploadAttendanceData = async ({
-  employeeNumber, // This should actually be employeeNumber
+  employeeNumber,
   photos,
   audioRecording,
   location,
@@ -56,8 +54,8 @@ export const uploadAttendanceData = async ({
     const uploadTimestamp = Date.now();
     form.append("locationType", "CAMPUS");
 
-    form.append("username", useAuthStore.getState().userName || ""); // Add this line
-    form.append("employeeNumber", employeeNumber.toString()); // Keep this line
+    form.append("username", useAuthStore.getState().userName || "");
+    form.append("employeeNumber", employeeNumber.toString());
     form.append("timestamp", uploadTimestamp.toString());
 
     if (location && location.trim()) {
@@ -71,17 +69,15 @@ export const uploadAttendanceData = async ({
       form.append("longitude", longitude.toString());
     }
 
-    // ✅ Backend now expects only ONE photo
     if (photos.length > 0 && photos[0]?.uri) {
       const photoFile = {
         uri: photos[0].uri,
         type: "image/jpeg",
         name: `photo_${uploadTimestamp}.jpg`,
       };
-      form.append("photo", photoFile as any); // singular
+      form.append("photo", photoFile as any);
     }
 
-    // ✅ Backend now expects only ONE audio file
     if (audioRecording?.uri) {
       const audioFile = {
         uri: audioRecording.uri,
@@ -96,7 +92,6 @@ export const uploadAttendanceData = async ({
     }
     console.log("form data", form);
 
-    // Get auth headers
     const authHeaders = useAuthStore.getState().getAuthHeaders();
 
     const { data } = await axios.post(`${API_BASE}/attendance`, form, {
@@ -136,7 +131,7 @@ export const checkoutAttendance = async (
     const { data } = await axios.post(
       `${API_BASE}/attendance/checkout`,
       {
-        employeeNumber, // Changed from username
+        employeeNumber,
       },
       {
         headers: {
@@ -154,7 +149,6 @@ export const checkoutAttendance = async (
   } catch (e: any) {
     console.error("Checkout error:", e);
 
-    // Handle token expiry
     if (e.response?.status === 403 || e.response?.status === 401) {
       return {
         success: false,
@@ -176,7 +170,7 @@ export const getTodayAttendance = async (
     const authHeaders = useAuthStore.getState().getAuthHeaders();
 
     const { data } = await axios.get(
-      `${API_BASE}/attendance/today/${employeeNumber}`, // Still using employeeNumber in URL
+      `${API_BASE}/attendance/today/${employeeNumber}`,
       {
         timeout: 10000,
         headers: authHeaders,
@@ -190,7 +184,6 @@ export const getTodayAttendance = async (
   } catch (e: any) {
     console.error("Get today attendance error:", e);
 
-    // Handle token expiry
     if (e.response?.status === 403 || e.response?.status === 401) {
       return {
         success: false,
